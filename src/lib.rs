@@ -204,8 +204,8 @@ pub struct Adaptor<T> {
     error: Result<(),io::Error>,
 }
 
-///Update a std::io::Write to be a std::fmt::Write
-pub fn upgrade_write<T:std::io::Write>(inner:T)->Adaptor<T>{
+///Upgrade a std::io::Write to be a std::fmt::Write
+pub fn upgrade_writer<T:std::io::Write>(inner:T)->Adaptor<T>{
     Adaptor{
         inner,
         error:Ok(())
