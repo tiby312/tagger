@@ -21,6 +21,7 @@ impl<'a,T:Write> Drop for Element<'a,T>{
 }
 
 
+
 pub struct TagBuilder<'a,T:Write>{
     writer:Option<&'a mut T>,
     tag:&'a str,
@@ -48,15 +49,20 @@ impl<'a,T:Write> TagBuilder<'a,T>{
         w.write_str(s).unwrap();
         self
     }
-    pub fn app_mut(&mut self,s:&str)->&mut Self{
+
+    pub fn attr<F:core::fmt::Display>(mut self,attr:&str,val:F)->Self{
         let w=self.writer.as_mut().unwrap();
         w.write_char(' ').unwrap();
-        w.write_str(s).unwrap();
+        w.write_str(attr).unwrap();
+        w.write_str(" = ").unwrap();
+        write!(w,"\"{}\"",val).unwrap();
         self
     }
-    //You'll have to add your own space!
-    pub fn get_writer(&mut self)->&mut T{
-        self.writer.as_mut().unwrap()
+
+    pub fn setup_writer(&mut self)->&mut T{
+        let w=self.writer.as_mut().unwrap();
+        w.write_char(' ').unwrap();
+        w
     }
 
     pub fn tend(mut self)->Element<'a,T>{

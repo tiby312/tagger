@@ -8,8 +8,16 @@ fn main()->Result<(),Error>{
         let mut el=tagger::Element::new(&mut string,"start").tend();
         
         let mut html=el.tag("html").app("DOC_TYPE").tend();
+        
+        
         html.tag("rect").app("class='poloto2fill' height='7.5' rx='5' ry='5' width='50' x='680' y='176.25'").tcut();
         
+        
+        html.tag("rect").attr("width",4).tcut();
+        
+        html.tag("rect").attr("class","poloto2fill").attr("height",7.5).attr("rx",5).tcut();
+        
+
         let mut style=html.tag("style").tend();
         style.write_str(".potato{chicken}\n");
         drop(style);
