@@ -199,19 +199,19 @@ impl<'a,T:Write> PathData<'a,T>{
 
 use std::*;
 
-pub struct Adaptor<T> {
-    inner:  T,
-    error: Result<(),io::Error>,
+pub struct WriterAdaptor<T> {
+    pub inner:  T,
+    pub error: Result<(),io::Error>,
 }
 
 ///Upgrade a std::io::Write to be a std::fmt::Write
-pub fn upgrade_writer<T:std::io::Write>(inner:T)->Adaptor<T>{
-    Adaptor{
+pub fn upgrade_writer<T:std::io::Write>(inner:T)->WriterAdaptor<T>{
+    WriterAdaptor{
         inner,
         error:Ok(())
     }
 }
-impl<T: io::Write> fmt::Write for Adaptor<T> {
+impl<T: io::Write> fmt::Write for WriterAdaptor<T> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         match self.inner.write_all(s.as_bytes()) {
             Ok(()) => Ok(()),
