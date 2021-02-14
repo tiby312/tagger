@@ -44,13 +44,13 @@ impl<'a,T:Write> TagBuilder<'a,T>{
 
     pub fn app(mut self,s:&str)->Self{
         let w=self.writer.as_mut().unwrap();
-        w.write_char(' ');
+        w.write_char(' ').unwrap();
         w.write_str(s).unwrap();
         self
     }
     pub fn app_mut(&mut self,s:&str)->&mut Self{
         let w=self.writer.as_mut().unwrap();
-        w.write_char(' ');
+        w.write_char(' ').unwrap();
         w.write_str(s).unwrap();
         self
     }
