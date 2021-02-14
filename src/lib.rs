@@ -1,7 +1,6 @@
 
 
 use core::fmt::Write;
-use core::fmt::Error;
 
 
 pub struct Element<'a,T:Write>{
@@ -10,13 +9,26 @@ pub struct Element<'a,T:Write>{
     level:usize
 }
 
+
+pub fn root<T:Write>(writer:&mut T)->Element<T>{
+    Element{
+        writer,
+        tag:"",
+        level:0
+    }
+}
+
 impl<'a,T:Write> Drop for Element<'a,T>{
     fn drop(&mut self){
-        let tabs="\t".repeat(self.level);
         
-        //Silently fail inside of drop
-        let _ = self.writer.write_str(&format!("{}</{}>\n",tabs,self.tag));
-        
+        if !self.tag.is_empty(){
+            for _ in 0..self.level-1{
+                let _ =self.writer.write_char('\t');
+            }    
+            let _ =self.writer.write_str("</");
+            let _ =self.writer.write_str(self.tag);
+            let _ =self.writer.write_str(">\n");
+        }
     }
 }
 
@@ -35,11 +47,11 @@ impl<'a,T:Write> TagBuilder<'a,T>{
             level,
         }
     }
-    pub fn tcut(mut self){
+    pub fn empty(mut self){
         self.writer.take().unwrap().write_str("/>\n").unwrap();
     }
     
-    pub fn tcut_short(mut self){
+    pub fn empty_no_slash(mut self){
         self.writer.take().unwrap().write_str(">\n").unwrap();
     }
 
@@ -68,7 +80,7 @@ impl<'a,T:Write> TagBuilder<'a,T>{
     }
 
     
-    pub fn tend(mut self)->Element<'a,T>{
+    pub fn end(mut self)->Element<'a,T>{
         let writer=self.writer.take().unwrap();
         
         writer.write_str(">\n").unwrap();
@@ -89,10 +101,7 @@ impl<'a,T:Write> Drop for TagBuilder<'a,T>{
 }
 
 impl<'a,T:Write> Element<'a,T>{
-    pub fn new(writer:&'a mut T,tag:&'a str)->TagBuilder<'a,T>{
-        write_start_tag(writer,0,tag).unwrap();
-        TagBuilder::new(writer,tag,0)
-    }
+    
 
     pub fn write_str(&mut self,s:&str){
         self.writer.write_str(s).unwrap()
@@ -102,22 +111,33 @@ impl<'a,T:Write> Element<'a,T>{
         self.writer
     }
 
-    pub fn tag<'b>(&'b mut self,tag:&'b str)->TagBuilder<'b,T>{
-        write_start_tag(self.writer,self.level+1,tag).unwrap();
+    pub fn decl(&mut self,data:&str){
+        for _ in 0..self.level{
+            self.writer.write_char('\t').unwrap();
+        }
+        self.writer.write_str("<!").unwrap();
+        self.writer.write_str(data).unwrap();
+        self.writer.write_str(">\n").unwrap();
+    }
+    pub fn comment(&mut self,data:&str){
+        for _ in 0..self.level{
+            self.writer.write_char('\t').unwrap();
+        }
+        self.writer.write_str("<-- ").unwrap();
+        self.writer.write_str(data).unwrap();
+        self.writer.write_str(" -->\n").unwrap();
+    }
+    pub fn tag_build<'b>(&'b mut self,tag:&'b str)->TagBuilder<'b,T>{
+        assert!(!tag.is_empty(),"Can't have an empty string for a tag");
+        for _ in 0..self.level{
+            self.writer.write_char('\t').unwrap();
+        }
+        self.writer.write_char('<').unwrap();
+        self.writer.write_str(tag).unwrap();
         TagBuilder::new(self.writer,tag,self.level+1)
     }
     
 
-}
-
-fn write_start_tag<T:Write>(writer:&mut T,num_tabs:usize,tag:&str)->Result<(),Error>{
-    for _ in 0..num_tabs{
-        writer.write_char('\t')?
-    }
-    writer.write_char('<')?;
-    writer.write_str(tag)?;
-    
-    Ok(())
 }
 
 

@@ -1,38 +1,37 @@
 
-use core::fmt::Error;
-fn main()->Result<(),Error>{
+
+fn main(){
     
     let mut string=String::new();
 
     {
-        let mut el=tagger::Element::new(&mut string,"start").tend();
+        let mut el=tagger::root(&mut string);
+        let mut html=el.tag_build("html").end();
         
-        let mut html=el.tag("html").app("DOC_TYPE").tend();
+        html.decl("DOC_TYPE=5");
+        
+        html.tag_build("rect").app("class='poloto2fill' height='7.5' rx='5' ry='5' width='50' x='680' y='176.25'").empty();
         
         
-        html.tag("rect").app("class='poloto2fill' height='7.5' rx='5' ry='5' width='50' x='680' y='176.25'").tcut();
+        html.tag_build("rect").attr("width",4).empty_no_slash();
+        html.comment("test comment!");
         
+        html.tag_build("rect").attr("class","poloto2fill").attr("height",7.5).attr("rx",5).empty();
         
-        html.tag("rect").attr("width",4).tcut();
-        
-        html.tag("rect").attr("class","poloto2fill").attr("height",7.5).attr("rx",5).tcut();
-        
-
-        let mut style=html.tag("style").tend();
+        let mut style=html.tag_build("style").end();
         style.write_str(".potato{chicken}\n");
         drop(style);
         
-        let mut div=html.tag("div").app("x=5").tend();
-        div.tag("svg").app("foo").tend();
-        div.tag("svg").app("blag").tend();
-        div.tag("img").app("width='100%'").tcut();
+        let mut div=html.tag_build("div").app("x=5").end();
+        div.tag_build("svg").app("foo").end();
+        div.tag_build("svg").app("blag").end();
+        div.tag_build("img").app("width='100%'").empty();
         drop(div);
 
 
-        html.tag("div").app("kiki=7").tend();
+        html.tag_build("div").app("kiki=7").end();
         
     }
     use std::io::Write;
     std::io::stdout().write_all(&string.as_bytes()).unwrap();
-    Ok(())
 }
