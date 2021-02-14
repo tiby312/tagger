@@ -73,6 +73,16 @@ impl<'a,T:Write> TagBuilder<'a,T>{
     }
 
 
+    pub fn setw(mut self,attr:&str,func:impl FnOnce(&mut T)->Result<(),core::fmt::Error>)->Self{
+        let w=self.writer.as_mut().unwrap();
+        w.write_char(' ').unwrap();
+        w.write_str(attr).unwrap();
+        w.write_str(" = \"").unwrap();
+        let _ = func(w);
+
+        w.write_str("\"").unwrap();
+        self
+    }
     pub fn set<F:core::fmt::Display>(mut self,attr:&str,val:F)->Self{
         let w=self.writer.as_mut().unwrap();
         w.write_char(' ').unwrap();
