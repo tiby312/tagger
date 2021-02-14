@@ -5,12 +5,13 @@ fn main(){
     let mut string=String::new();
 
     {
-        let mut el=tagger::root(&mut string);
-        let mut html=el.tag_build("html").end();
+        let mut root=tagger::root(&mut string);
+        root.declaration("DOCTYPE html");
         
-        html.decl("DOC_TYPE=5");
+        let mut html=root.tag_build("html").end();
         
-        html.tag_build("rect").app("class='poloto2fill' height='7.5' rx='5' ry='5' width='50' x='680' y='176.25'").empty();
+        
+        html.tag_build("rect").append("class='poloto2fill' height='7.5' rx='5' ry='5' width='50' x='680' y='176.25'").empty();
         
         
         html.tag_build("rect").attr("width",4).empty_no_slash();
@@ -22,14 +23,14 @@ fn main(){
         style.write_str(".potato{chicken}\n");
         drop(style);
         
-        let mut div=html.tag_build("div").app("x=5").end();
-        div.tag_build("svg").app("foo").end();
-        div.tag_build("svg").app("blag").end();
-        div.tag_build("img").app("width='100%'").empty();
+        let mut div=html.tag_build("div").append("x=5").end();
+        div.tag_build("svg").append("foo").end();
+        div.tag_build("svg").append("blag").end();
+        div.tag_build("img").append("width='100%'").empty();
         drop(div);
 
 
-        html.tag_build("div").app("kiki=7").end();
+        html.tag_build("div").append("kiki=7").end();
         
     }
     use std::io::Write;

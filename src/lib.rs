@@ -9,7 +9,8 @@ pub struct Element<'a,T:Write>{
     level:usize
 }
 
-
+///Starting point.
+///Doesnt actually write anything out.
 pub fn root<T:Write>(writer:&mut T)->Element<T>{
     Element{
         writer,
@@ -55,7 +56,7 @@ impl<'a,T:Write> TagBuilder<'a,T>{
         self.writer.take().unwrap().write_str(">\n").unwrap();
     }
 
-    pub fn app(mut self,s:&str)->Self{
+    pub fn append(mut self,s:&str)->Self{
         let w=self.writer.as_mut().unwrap();
         w.write_char(' ').unwrap();
         w.write_str(s).unwrap();
@@ -111,7 +112,7 @@ impl<'a,T:Write> Element<'a,T>{
         self.writer
     }
 
-    pub fn decl(&mut self,data:&str){
+    pub fn declaration(&mut self,data:&str){
         for _ in 0..self.level{
             self.writer.write_char('\t').unwrap();
         }
@@ -136,11 +137,4 @@ impl<'a,T:Write> Element<'a,T>{
         self.writer.write_str(tag).unwrap();
         TagBuilder::new(self.writer,tag,self.level+1)
     }
-    
-
 }
-
-
-
-
-//TODO add option to not add newline chars.
