@@ -59,12 +59,15 @@ impl<'a,T:Write> TagBuilder<'a,T>{
         self
     }
 
-    pub fn setup_writer(&mut self)->&mut T{
+    //Gives user access to the writer for more control
+    //Before it is returned, a space is added.
+    pub fn writer(&mut self)->&mut T{
         let w=self.writer.as_mut().unwrap();
         w.write_char(' ').unwrap();
         w
     }
 
+    
     pub fn tend(mut self)->Element<'a,T>{
         let writer=self.writer.take().unwrap();
         
