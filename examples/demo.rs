@@ -10,8 +10,7 @@ fn main(){
         
         let mut html=root.tag_build("html").end();
         
-        
-        html.tag_build("rect").append("class='poloto2fill' height='7.5' rx='5' ry='5' width='50' x='680' y='176.25'").empty();
+        //html.tag_build("rect").append("class='poloto2fill' height='7.5' rx='5' ry='5' width='50' x='680' y='176.25'").empty();
         
         
         html.tag_build("rect").attr("width",4).empty_no_slash();
