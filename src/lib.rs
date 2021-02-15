@@ -1,6 +1,8 @@
 
 
 use core::fmt::Write;
+use core::fmt::Error;
+
 
 ///Build elements by borrowing
 pub mod element_borrow;
@@ -24,34 +26,30 @@ pub trait ElementTrait{
 
 
     fn write_str(&mut self,s:&str){
-        self.get_writer().write_str(s).unwrap();
+        write!(self.get_writer(),"{}",s).unwrap();
     }
 
     fn declaration(&mut self,data:&str){
         for _ in 0..self.get_level(){
-            self.get_writer().write_char('\t').unwrap();
+            write!(self.get_writer(),"{}",'\t').unwrap();
         }
-        self.get_writer().write_str("<!").unwrap();
-        self.get_writer().write_str(data).unwrap();
-        self.get_writer().write_str(">\n").unwrap();
+        write!(self.get_writer(),"<!{}>\n",data).unwrap();
     }
     fn comment(&mut self,data:&str){
         for _ in 0..self.get_level(){
-            self.get_writer().write_char('\t').unwrap();
+            write!(self.get_writer(),"{}",'\t').unwrap();
         }
-        self.get_writer().write_str("<-- ").unwrap();
-        self.get_writer().write_str(data).unwrap();
-        self.get_writer().write_str(" -->\n").unwrap();
+        write!(self.get_writer(),"<-- {} -->\n",data).unwrap();
     }
 
     fn tag_build<'b>(&'b mut self,tag:&'b str)->element_borrow::TagBuilder<'b,Self::W>{
         let levels=self.get_level();
+        let w=self.get_writer();
         for _ in 0..levels{
-            self.get_writer().write_char('\t').unwrap();
+            write!(w,"{}",'\t').unwrap();
         }
-        self.get_writer().write_char('<').unwrap();
-        self.get_writer().write_str(tag).unwrap();
-        element_borrow::TagBuilder::new(self.get_writer(),tag,levels+1)
+        write!(w,"<{}",tag).unwrap();
+        element_borrow::TagBuilder::new(w,tag,levels+1)
     }
 }
 
@@ -70,28 +68,21 @@ pub trait TagBuilderTrait:Sized{
 
     fn append(mut self,s:&str)->Self{
         let w=self.get_writer();
-        w.write_char(' ').unwrap();
-        w.write_str(s).unwrap();
+        write!(w," {}",s).unwrap();
         self
     }
 
 
-    fn setw(mut self,attr:&str,func:impl FnOnce(&mut Self::W)->Result<(),core::fmt::Error>)->Self{
+    fn setw(mut self,attr:&str,func:impl FnOnce(&mut Self::W)->Result<(),std::io::Error>)->Self{
         let w=self.get_writer();
-        w.write_char(' ').unwrap();
-        w.write_str(attr).unwrap();
-        w.write_str(" = \"").unwrap();
+        write!(w," {} = \"",attr).unwrap();
         let _ = func(w);
-
-        w.write_str("\"").unwrap();
+        write!(w,"\"").unwrap();
         self
     }
     fn set<F:core::fmt::Display>(mut self,attr:&str,val:F)->Self{
         let w=self.get_writer();
-        w.write_char(' ').unwrap();
-        w.write_str(attr).unwrap();
-        w.write_str(" = ").unwrap();
-        write!(w,"\"{}\"",val).unwrap();
+        write!(w," {} = \"{}\"",attr,val).unwrap();
         self
     }
 

@@ -7,25 +7,21 @@ pub struct TagBuilderFlat<T:Write>{
 impl<T:Write> TagBuilderFlat<T>{
     pub fn set<F:core::fmt::Display>(mut self,attr:&str,val:F)->Self{
         let w=&mut self.inner.writer;
-        w.write_char(' ').unwrap();
-        w.write_str(attr).unwrap();
-        w.write_str(" = ").unwrap();
-        write!(w,"\"{}\"",val).unwrap();
+        write!(w," {} = \"{}\"",attr,val).unwrap();
         self
     }
     pub fn empty(mut self)->FlatElement<T>{
-        self.inner.writer.write_str("/>\n").unwrap();
+        write!(self.inner.writer,"{}","/>\n").unwrap();
         self.inner
     }
 
     pub fn empty_no_slash(mut self)->FlatElement<T>{
-        self.inner.writer.write_str(">\n").unwrap();
+        write!(self.inner.writer,"{}",">\n").unwrap();
         self.inner
     }
 
     pub fn end(mut self)->FlatElement<T>{
-        let writer=&mut self.inner.writer;
-        writer.write_str(">\n").unwrap();
+        write!(self.inner.writer,"{}",">\n").unwrap();
         self.inner.tags.push(self.tag);
         self.inner
     }
@@ -46,13 +42,11 @@ impl<T:Write> Drop for FlatElement<T>{
     }
 }
 
-fn write_end_tag<T:Write>(mut writer:T,tag:&str,num_level:usize)->Result<(),core::fmt::Error>{
+fn write_end_tag<T:Write>(mut writer:T,tag:&str,num_level:usize)->Result<(),Error>{
     for _ in 0..num_level{
-        writer.write_char('\t')?;
+        write!(writer,"{}",'\t')?;
     }
-    writer.write_str("</")?;
-    writer.write_str(tag)?;
-    writer.write_str(">\n")?;
+    write!(writer,"</{}>\n",tag)?;
     Ok(())
 }
 
@@ -85,10 +79,9 @@ impl<T:Write> FlatElement<T>{
     pub fn tag_build_flat(mut self,tag:&str)->TagBuilderFlat<T>{
         assert!(!tag.is_empty(),"Can't have an empty string for a tag");
         for _ in 0..self.tags.len(){
-            self.writer.write_char('\t').unwrap();
+            write!(self.writer,"{}",'\t').unwrap();
         }
-        self.writer.write_char('<').unwrap();
-        self.writer.write_str(tag).unwrap();
+        write!(self.writer,"<{}",tag).unwrap();
         TagBuilderFlat{
             inner:self,
             tag:tag.to_string()
@@ -98,10 +91,10 @@ impl<T:Write> FlatElement<T>{
     pub fn tag_build<'b>(&'b mut self,tag:&'b str)->element_borrow::TagBuilder<'b,T>{
         assert!(!tag.is_empty(),"Can't have an empty string for a tag");
         for _ in 0..self.tags.len(){
-            self.writer.write_char('\t').unwrap();
+            write!(self.writer,"{}",'\t').unwrap();
         }
-        self.writer.write_char('<').unwrap();
-        self.writer.write_str(tag).unwrap();
+
+        write!(self.writer,"<{}",tag).unwrap();
         element_borrow::TagBuilder::new(&mut self.writer,tag,self.tags.len()+1)
     }
 }

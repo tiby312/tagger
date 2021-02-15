@@ -12,11 +12,9 @@ impl<'a,T:Write> Drop for Element<'a,T>{
         
         if !self.tag.is_empty(){
             for _ in 0..self.level-1{
-                let _ =self.writer.write_char('\t');
+                let _ =write!(self.writer,"{}",'\t');
             }    
-            let _ =self.writer.write_str("</");
-            let _ =self.writer.write_str(self.tag);
-            let _ =self.writer.write_str(">\n");
+            let _ = write!(self.writer,"</{}>\n",self.tag);
         }
     }
 }
@@ -62,17 +60,16 @@ impl<'a,T:Write> TagBuilder<'a,T>{
     }
 
     pub fn empty(mut self){
-        self.writer.take().unwrap().write_str("/>\n").unwrap();
+        write!(self.writer.take().unwrap(),"{}","/>\n").unwrap();
     }
     
     pub fn empty_no_slash(mut self){
-        self.writer.take().unwrap().write_str(">\n").unwrap();
+        write!(self.writer.take().unwrap(),"{}",">\n").unwrap();
     }
     
     pub fn end(mut self)->Element<'a,T>{
         let writer=self.writer.take().unwrap();
-        
-        writer.write_str(">\n").unwrap();
+        write!(writer,"{}",">\n").unwrap();
         Element{
             writer,
             tag:self.tag,
@@ -83,8 +80,7 @@ impl<'a,T:Write> TagBuilder<'a,T>{
 impl<'a,T:Write> Drop for TagBuilder<'a,T>{
     fn drop(&mut self){
         if let Some(writer)=self.writer.take(){
-            
-            let _ = writer.write_str(">\n");
+            let _ = write!(writer,"{}",">\n");
         }
     }
 }
