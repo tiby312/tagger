@@ -4,12 +4,14 @@ pub struct TagBuilderFlat<T:Write>{
     pub(super) tag:String,
     pub(super) inner:FlatElement<T>
 }
-impl<T:Write> TagBuilderFlat<T>{
-    pub fn set<F:core::fmt::Display>(mut self,attr:&str,val:F)->Self{
-        let w=&mut self.inner.writer;
-        write!(w," {} = \"{}\"",attr,val).unwrap();
-        self
+impl<T:Write> TagBuilderTrait for TagBuilderFlat<T>{
+    type W=T;
+    fn get_writer(&mut self)->&mut T{
+        &mut self.inner.writer
     }
+}
+impl<T:Write> TagBuilderFlat<T>{
+
     pub fn empty(mut self)->FlatElement<T>{
         write!(self.inner.writer,"{}","/>\n").unwrap();
         self.inner
@@ -88,6 +90,12 @@ impl<T:Write> FlatElement<T>{
         }
     }
 
+    ///Don't add a new element. Just
+    ///convert this existing element into the borrowed verision.
+    pub fn borrow(&mut self)->element_borrow::Element<T>{
+        //TODO is this even possible?
+        unimplemented!();
+    }
     pub fn tag_build<'b>(&'b mut self,tag:&'b str)->element_borrow::TagBuilder<'b,T>{
         assert!(!tag.is_empty(),"Can't have an empty string for a tag");
         for _ in 0..self.tags.len(){
