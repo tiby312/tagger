@@ -2,15 +2,19 @@
 
 use core::fmt::Write;
 
+///Build elements by borrowing
 pub mod element_borrow;
+///Build elements by moving
 pub mod element_move;
 
+///Include this to use common element and tab building functions.
 pub mod prelude{
     pub use super::TagBuilderTrait;
     pub use super::ElementTrait;
 }
 
 
+///Common functionality between [`element_borrow::Element`] and [`element_move::FlatElement`] 
 pub trait ElementTrait{
     type W:Write;
 
@@ -51,7 +55,7 @@ pub trait ElementTrait{
     }
 }
 
-
+///Common functionality between [`element_borrow::TagBuilder`] and [`element_move::TagBuilderFlat`] 
 pub trait TagBuilderTrait:Sized{
     type W:Write;
     fn get_writer(&mut self)->&mut Self::W;
@@ -104,7 +108,7 @@ pub fn root<T:Write>(writer:T)->element_move::FlatElement<T>{
 
 
 
-
+///Created by [`TagBuilderTrait::polyline_data`]
 pub struct PolyLine<'a,T:Write>{
     writer:&'a mut T
 }
@@ -123,6 +127,7 @@ impl<'a,T:Write> PolyLine<'a,T>{
     }
 }
 
+///Created by [`TagBuilderTrait::path_data`]
 pub struct PathData<'a,T:Write>{
     writer:&'a mut T
 }
@@ -153,6 +158,7 @@ impl<'a,T:Write> PathData<'a,T>{
 
 use std::*;
 
+///Used by [`upgrade_writer`]
 pub struct WriterAdaptor<T> {
     pub inner:  T,
     pub error: Result<(),io::Error>,
