@@ -73,7 +73,7 @@ pub trait TagBuilderTrait:Sized{
     }
 
 
-    fn setw(mut self,attr:&str,func:impl FnOnce(&mut Self::W)->Result<(),std::io::Error>)->Self{
+    fn setw(mut self,attr:&str,func:impl FnOnce(&mut Self::W)->Result<(),Error>)->Self{
         let w=self.get_writer();
         write!(w," {} = \"",attr).unwrap();
         let _ = func(w);
