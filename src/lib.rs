@@ -2,79 +2,78 @@
 
 use core::fmt::Write;
 
+pub mod element_borrow;
+pub mod element_move;
 
-pub struct Element<'a,T:Write>{
-    writer:&'a mut T,
-    tag:&'a str,
-    level:usize
+pub mod prelude{
+    pub use super::TagBuilderTrait;
+    pub use super::ElementTrait;
 }
 
-///Starting point.
-///Doesnt actually write anything out.
-pub fn root<T:Write>(writer:&mut T)->Element<T>{
-    Element{
-        writer,
-        tag:"",
-        level:0
+
+pub trait ElementTrait{
+    type W:Write;
+
+    fn get_level(&self)->usize;
+
+    fn get_writer(&mut self)->&mut Self::W;
+
+
+    fn write_str(&mut self,s:&str){
+        self.get_writer().write_str(s).unwrap();
     }
-}
 
-impl<'a,T:Write> Drop for Element<'a,T>{
-    fn drop(&mut self){
-        
-        if !self.tag.is_empty(){
-            for _ in 0..self.level-1{
-                let _ =self.writer.write_char('\t');
-            }    
-            let _ =self.writer.write_str("</");
-            let _ =self.writer.write_str(self.tag);
-            let _ =self.writer.write_str(">\n");
+    fn declaration(&mut self,data:&str){
+        for _ in 0..self.get_level(){
+            self.get_writer().write_char('\t').unwrap();
         }
+        self.get_writer().write_str("<!").unwrap();
+        self.get_writer().write_str(data).unwrap();
+        self.get_writer().write_str(">\n").unwrap();
     }
-}
-
-
-
-pub struct TagBuilder<'a,T:Write>{
-    writer:Option<&'a mut T>,
-    tag:&'a str,
-    level:usize,
-}
-impl<'a,T:Write> TagBuilder<'a,T>{
-    fn new(writer:&'a mut T,tag:&'a str,level:usize)->TagBuilder<'a,T>{
-        TagBuilder{
-            writer:Some(writer),
-            tag,
-            level,
+    fn comment(&mut self,data:&str){
+        for _ in 0..self.get_level(){
+            self.get_writer().write_char('\t').unwrap();
         }
+        self.get_writer().write_str("<-- ").unwrap();
+        self.get_writer().write_str(data).unwrap();
+        self.get_writer().write_str(" -->\n").unwrap();
     }
 
-    pub fn path_data(&mut self)->PathData<T>{
-        PathData::new(self.writer.as_mut().unwrap())
+    fn tag_build<'b>(&'b mut self,tag:&'b str)->element_borrow::TagBuilder<'b,Self::W>{
+        let levels=self.get_level();
+        for _ in 0..levels{
+            self.get_writer().write_char('\t').unwrap();
+        }
+        self.get_writer().write_char('<').unwrap();
+        self.get_writer().write_str(tag).unwrap();
+        element_borrow::TagBuilder::new(self.get_writer(),tag,levels+1)
+    }
+}
+
+
+pub trait TagBuilderTrait:Sized{
+    type W:Write;
+    fn get_writer(&mut self)->&mut Self::W;
+
+    fn path_data(&mut self)->PathData<Self::W>{
+        PathData::new(self.get_writer())
     }
 
-    pub fn polyline_data(&mut self)->PolyLine<T>{
-        PolyLine::new(self.writer.as_mut().unwrap())
+    fn polyline_data(&mut self)->PolyLine<Self::W>{
+        PolyLine::new(self.get_writer())
     }
 
-    pub fn empty(mut self){
-        self.writer.take().unwrap().write_str("/>\n").unwrap();
-    }
-    
-    pub fn empty_no_slash(mut self){
-        self.writer.take().unwrap().write_str(">\n").unwrap();
-    }
-
-    pub fn append(mut self,s:&str)->Self{
-        let w=self.writer.as_mut().unwrap();
+    fn append(mut self,s:&str)->Self{
+        let w=self.get_writer();
         w.write_char(' ').unwrap();
         w.write_str(s).unwrap();
         self
     }
 
 
-    pub fn setw(mut self,attr:&str,func:impl FnOnce(&mut T)->Result<(),core::fmt::Error>)->Self{
-        let w=self.writer.as_mut().unwrap();
+    fn setw(mut self,attr:&str,func:impl FnOnce(&mut Self::W)->Result<(),core::fmt::Error>)->Self{
+        let w=self.get_writer();
         w.write_char(' ').unwrap();
         w.write_str(attr).unwrap();
         w.write_str(" = \"").unwrap();
@@ -83,8 +82,8 @@ impl<'a,T:Write> TagBuilder<'a,T>{
         w.write_str("\"").unwrap();
         self
     }
-    pub fn set<F:core::fmt::Display>(mut self,attr:&str,val:F)->Self{
-        let w=self.writer.as_mut().unwrap();
+    fn set<F:core::fmt::Display>(mut self,attr:&str,val:F)->Self{
+        let w=self.get_writer();
         w.write_char(' ').unwrap();
         w.write_str(attr).unwrap();
         w.write_str(" = ").unwrap();
@@ -92,72 +91,17 @@ impl<'a,T:Write> TagBuilder<'a,T>{
         self
     }
 
-    //Gives user access to the writer for more control
-    //Before it is returned, a space is added.
-    pub fn get_writer(&mut self)->&mut T{
-        self.writer.as_mut().unwrap()
-    }
-
-    
-    pub fn end(mut self)->Element<'a,T>{
-        let writer=self.writer.take().unwrap();
-        
-        writer.write_str(">\n").unwrap();
-        Element{
-            writer,
-            tag:self.tag,
-            level:self.level
-        }
-    }
-}
-impl<'a,T:Write> Drop for TagBuilder<'a,T>{
-    fn drop(&mut self){
-        if let Some(writer)=self.writer.take(){
-            
-            let _ = writer.write_str(">\n");
-        }
-    }
 }
 
-impl<'a,T:Write> Element<'a,T>{
-    
-
-    pub fn write_str(&mut self,s:&str){
-        self.writer.write_str(s).unwrap()
-    }
-
-    pub fn get_writer(&mut self)->&mut T{
-        self.writer
-    }
-
-    pub fn declaration(&mut self,data:&str){
-        for _ in 0..self.level{
-            self.writer.write_char('\t').unwrap();
-        }
-        self.writer.write_str("<!").unwrap();
-        self.writer.write_str(data).unwrap();
-        self.writer.write_str(">\n").unwrap();
-    }
-    pub fn comment(&mut self,data:&str){
-        for _ in 0..self.level{
-            self.writer.write_char('\t').unwrap();
-        }
-        self.writer.write_str("<-- ").unwrap();
-        self.writer.write_str(data).unwrap();
-        self.writer.write_str(" -->\n").unwrap();
-    }
 
 
-    pub fn tag_build<'b>(&'b mut self,tag:&'b str)->TagBuilder<'b,T>{
-        assert!(!tag.is_empty(),"Can't have an empty string for a tag");
-        for _ in 0..self.level{
-            self.writer.write_char('\t').unwrap();
-        }
-        self.writer.write_char('<').unwrap();
-        self.writer.write_str(tag).unwrap();
-        TagBuilder::new(self.writer,tag,self.level+1)
-    }
+
+///Starting point.
+///Doesnt actually write anything out.
+pub fn root<T:Write>(writer:T)->element_move::FlatElement<T>{
+    element_move::FlatElement::new(writer)
 }
+
 
 
 

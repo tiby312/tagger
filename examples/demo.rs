@@ -1,4 +1,5 @@
 
+use tagger::prelude::*;
 
 fn main(){
     
@@ -13,10 +14,10 @@ fn main(){
         //html.tag_build("rect").append("class='poloto2fill' height='7.5' rx='5' ry='5' width='50' x='680' y='176.25'").empty();
         
         
-        html.tag_build("rect").attr("width",4).empty_no_slash();
+        html.tag_build("rect").set("width",4).empty_no_slash();
         html.comment("test comment!");
         
-        html.tag_build("rect").attr("class","poloto2fill").attr("height",7.5).attr("rx",5).empty();
+        html.tag_build("rect").set("class","poloto2fill").set("height",7.5).set("rx",5).empty();
         
         let mut style=html.tag_build("style").end();
         style.write_str(".potato{chicken}\n");
