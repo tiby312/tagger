@@ -1,7 +1,89 @@
 use tagger::prelude::*;
 
+mod foo{
+    use core::fmt::Write;
+    use core::fmt;
+
+    pub struct Single<'a,T:Write>{
+        writer:&'a mut T
+    }
+    impl<'a,T:Write> Single<'a,T>{
+        pub fn borrow<'b>(&'b mut self,a:fmt::Arguments<'_>,b:&'b str)->Floop<'b,T>{
+            self.writer.write_fmt(a);
+            Floop{
+                writer:self.writer,
+                func:Some(b)
+            }
+        }
+    }
+    pub struct Floop<'a,T:Write>{
+        writer:&'a mut T,
+        func:Option<&'a str>
+    }
+    impl<'a,T:Write> Drop for Floop<'a,T>{
+        fn drop(&mut self){
+            
+            let _ = self.writer.write_str(self.func.take().unwrap());
+        }
+    }
+    impl<'a,T:Write> Floop<'a,T>{
+        pub fn new(writer:&'a mut T,ar:fmt::Arguments,func2:&'a str)->Self{
+            writer.write_fmt(ar);
+            Floop{
+                writer,
+                func:Some(func2)
+            }
+        }
+        pub fn borrow<'b>(&'b mut self,a:fmt::Arguments,b:&'a str)->Floop<'b,T>{
+            self.writer.write_fmt(a);
+            Floop{
+                writer:self.writer,
+                func:Some(b)
+            }
+        }
+        pub fn borrow_single<'b>(&'b mut self,a:fmt::Arguments)->Single<'b,T>{
+            self.writer.write_fmt(a);
+            Single{
+                writer:self.writer
+            }
+        }
+    }
+}
+
+
+macro_rules! borrow {
+    ($dst:expr,$arg1:expr, $tail:expr) => {
+        $dst.borrow(format_args!($arg1),$tail)
+    };
+    ($dst:expr,$arg1:expr, $tail:expr,$($arg:tt)*) => {
+        $dst.borrow(format_args!($arg1,$($arg)*),$tail)
+    }
+}
+
 fn main() {
     let mut string = String::new();
+    {
+        use core::fmt::Write;
+        
+        let mut k=foo::Floop::new(&mut string,format_args!("<rect x={},y={}>\n",4,5),"</rect>\n");
+        
+
+        //let mut j=k.borrow(format_args!("<svg x={}",5),"</svg>");
+        
+        let mut j=borrow!(k,"<svg x={} y={}>","</svg>",5,4);
+        borrow!(j,"<chicken>","");
+        j.borrow_single(format_args!("<img x={}/>\n",4));
+
+        //let a=root!(k,"<rect={}>",4,"</rect>");
+        //let j=element!(a,"<img x={}>",4,"</img>");
+        //single!(j,"<img x={}>",4);
+
+
+
+        //k.borrow(|w|write!(w,"<img x={}>\n",4),|w|write!(w,"</img>\n"));
+        
+    }
+
 
     {
         let mut root = tagger::root(&mut string);
