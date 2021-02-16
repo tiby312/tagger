@@ -51,7 +51,16 @@ mod foo{
 }
 
 
-macro_rules! borrow {
+macro_rules! new_elem {
+    ($dst:expr,$arg1:expr, $tail:expr) => {
+        foo::Floop::new($dst,format_args!($arg1),$tail)
+    };
+    ($dst:expr,$arg1:expr, $tail:expr,$($arg:tt)*) => {
+        foo::Floop::new($dst,format_args!($arg1,$($arg)*),$tail)
+    }
+}
+
+macro_rules! elem {
     ($dst:expr,$arg1:expr, $tail:expr) => {
         $dst.borrow(format_args!($arg1),$tail)
     };
@@ -65,14 +74,12 @@ fn main() {
     {
         use core::fmt::Write;
         
-        let mut k=foo::Floop::new(&mut string,format_args!("<rect x={},y={}>\n",4,5),"</rect>\n");
+        let mut k=new_elem!(&mut string,"<rect x={},y={}>\n","</rect>",4,5);
         
+        let mut j=elem!(k,"<svg x={} y={}>","</svg>",5,4);
+        elem!(j,"<chicken>","");
 
-        //let mut j=k.borrow(format_args!("<svg x={}",5),"</svg>");
-        
-        let mut j=borrow!(k,"<svg x={} y={}>","</svg>",5,4);
-        borrow!(j,"<chicken>","");
-        j.borrow_single(format_args!("<img x={}/>\n",4));
+        //j.borrow_single(format_args!("<img x={}/>\n",4));
 
         //let a=root!(k,"<rect={}>",4,"</rect>");
         //let j=element!(a,"<img x={}>",4,"</img>");
