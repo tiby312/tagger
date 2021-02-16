@@ -165,7 +165,7 @@ pub struct WriterAdaptor<T> {
 }
 
 ///Upgrade a std::io::Write to be a std::fmt::Write
-pub fn upgrade_writer<T: std::io::Write>(inner: T) -> WriterAdaptor<T> {
+pub fn upgrade<T: std::io::Write>(inner: T) -> WriterAdaptor<T> {
     WriterAdaptor {
         inner,
         error: Ok(()),
