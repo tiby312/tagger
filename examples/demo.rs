@@ -78,6 +78,27 @@ macro_rules! element_empty {
 }
 
 
+use core::fmt;
+
+struct PolyLine<I>{
+    it:std::cell::RefCell<I>
+}
+impl<I:Iterator<Item=[f32;2]>> PolyLine<I>{
+    fn new(it:I)->PolyLine<I>{
+        PolyLine{
+            it:std::cell::RefCell::new(it)
+        }
+    }
+}
+impl<I:Iterator<Item=[f32;2]>> fmt::Display for PolyLine<I>{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for [x,y] in &mut *self.it.borrow_mut(){
+            write!(f,"{} {},",x,y)?
+        }
+        Ok(())
+    }
+
+}
 //TODO make path data / polyline data implement Display.
 //THEN you can pass it to the formatter!!!!
 
@@ -88,7 +109,9 @@ fn main() {
         
         let mut k=new_element!(&mut string,"<rect x={},y={}>\n","</rect>",4,5);
         
-        let mut j=element!(k,"<svg x={} y={}>","</svg>",5,4);
+        let mut p=PolyLine::new((0..5).map(|x|[x as f32,x as f32]));
+
+        let mut j=element!(k,"<svg x={} y={} d={}>","</svg>",5,4,p);
         element_empty!(j,"<chicken>");
 
         //j.borrow_single(format_args!("<img x={}/>\n",4));
