@@ -2,9 +2,9 @@ use super::*;
 
 
 pub struct Element<'a,T:Write>{
-    writer:&'a mut T,
-    tag:&'a str,
-    level:usize
+    pub(super) writer:&'a mut T,
+    pub(super) tag:&'a str,
+    pub(super) level:usize
 }
 
 impl<'a,T:Write> Drop for Element<'a,T>{

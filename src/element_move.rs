@@ -93,8 +93,11 @@ impl<T:Write> FlatElement<T>{
     ///Don't add a new element. Just
     ///convert this existing element into the borrowed verision.
     pub fn borrow(&mut self)->element_borrow::Element<T>{
-        //TODO is this even possible?
-        unimplemented!();
+        element_borrow::Element{
+            writer:&mut self.writer,
+            tag:"", //TODO make sure this is ok
+            level:self.tags.len()
+        }
     }
     pub fn tag_build<'b>(&'b mut self,tag:&'b str)->element_borrow::TagBuilder<'b,T>{
         assert!(!tag.is_empty(),"Can't have an empty string for a tag");
