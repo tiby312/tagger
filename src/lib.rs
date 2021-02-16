@@ -1,4 +1,8 @@
 
+
+pub mod prelude{
+
+}
 pub use inner::Element;
 pub use inner::Single;
 mod inner{
@@ -35,6 +39,12 @@ mod inner{
                 func:Some(func2)
             })
         }
+        pub fn write_str(&mut self,s:&str)->fmt::Result{
+            write!(self.writer,"{}",s)
+        }
+        pub fn get_writer(&mut self)->&mut T{
+            &mut self.writer
+        }
         pub fn borrow<'b>(&'b mut self,a:fmt::Arguments,b:&'a str)->Result<Element<'b,T>,fmt::Error>{
             self.writer.write_fmt(a)?;
             Ok(Element{
@@ -54,10 +64,10 @@ mod inner{
 #[macro_export]
 macro_rules! new_element {
     ($dst:expr,$arg1:expr, $tail:expr) => {
-        crate::Element::new($dst,format_args!($arg1),$tail)
+        $crate::Element::new($dst,format_args!($arg1),$tail)
     };
     ($dst:expr,$arg1:expr, $tail:expr,$($arg:tt)*) => {
-        crate::Element::new($dst,format_args!($arg1,$($arg)*),$tail)
+        $crate::Element::new($dst,format_args!($arg1,$($arg)*),$tail)
     }
 }
 #[macro_export]
@@ -82,6 +92,41 @@ macro_rules! empty_element {
 
 use core::fmt;
 
+
+pub struct PathCommander<'a,'b>{
+    writer:&'a mut fmt::Formatter<'b>
+}
+
+impl<'a,'b> PathCommander<'a,'b>{
+    pub fn close(&mut self)->fmt::Result {
+        write!(self.writer, "z")
+    }
+    pub fn move_to(&mut self, point: [f32; 2]) -> Result<&mut Self,fmt::Error> {
+        write!(self.writer, "M {} {} ", point[0], point[1])?;
+        Ok(self)
+    }
+    pub fn line_to(&mut self, point: [f32; 2]) -> Result<&mut Self,fmt::Error> {
+        write!(self.writer, "L {} {} ", point[0], point[1])?;
+        Ok(self)
+    }
+}
+
+pub fn path(func:impl FnOnce(PathCommander)->fmt::Result)->impl fmt::Display{
+    struct Path<F:FnOnce(PathCommander)->fmt::Result>{
+        it:std::cell::RefCell<Option<F>>
+    }
+    impl<F:FnOnce(PathCommander)->fmt::Result> fmt::Display for Path<F>{
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            let comm=PathCommander{writer:f};
+            (self.it.borrow_mut().take().unwrap())(comm)?;
+            Ok(())
+        }
+    }
+
+    Path{
+        it:std::cell::RefCell::new(Some(func))
+    }
+}
 
 pub fn poly(a:impl ExactSizeIterator<Item=[f32;2]>)->impl fmt::Display{
     struct PolyLine<I>{
