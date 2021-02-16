@@ -77,6 +77,10 @@ macro_rules! element_empty {
     }
 }
 
+
+//TODO make path data / polyline data implement Display.
+//THEN you can pass it to the formatter!!!!
+
 fn main() {
     let mut string = String::new();
     {
