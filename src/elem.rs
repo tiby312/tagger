@@ -29,9 +29,6 @@ impl<T: Write> ElementStack<T> {
         })
     }
 
-    pub fn get_writer(&mut self)->&mut T{
-        &mut self.writer
-    }
     ///Unwind all end tags on the stack.
     pub fn finish(mut self) -> fmt::Result {
         for s in self.ends.iter().rev() {
