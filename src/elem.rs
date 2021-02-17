@@ -3,7 +3,7 @@ use core::fmt::Write;
 
 /// A non-lifetimed `Element`.
 ///
-/// The [`Element`] struct requires a lifetime. 
+/// The [`Element`] struct requires a lifetime.
 /// If you want to pass an element between functions, this can be difficult.
 /// Instead you can use this struct.
 ///
@@ -14,32 +14,32 @@ use core::fmt::Write;
 /// If you make a function that returns this struct, the user should call
 /// `finish()` because they probably do not know how many elements are on the stack.
 ///
-pub struct ElementStack<T:Write>{
-    writer:T,
-    ends:Vec<String>
+pub struct ElementStack<T: Write> {
+    writer: T,
+    ends: Vec<String>,
 }
 
 impl<T: Write> ElementStack<T> {
-    pub fn new(mut writer:T,ar:fmt::Arguments,last:impl ToString)->Result<Self,fmt::Error>{
+    pub fn new(mut writer: T, ar: fmt::Arguments, last: impl ToString) -> Result<Self, fmt::Error> {
         writer.write_fmt(ar)?;
 
-        Ok(ElementStack{
+        Ok(ElementStack {
             writer,
-            ends:vec!(last.to_string())
+            ends: vec![last.to_string()],
         })
     }
 
     ///Unwind all end tags on the stack.
-    pub fn finish(mut self)->fmt::Result{
-        for s in self.ends.iter().rev(){
-            write!(self.writer,"{}",s)?;
-        }   
+    pub fn finish(mut self) -> fmt::Result {
+        for s in self.ends.iter().rev() {
+            write!(self.writer, "{}", s)?;
+        }
         self.ends.clear();
         Ok(())
     }
     pub fn end_last(&mut self) -> fmt::Result {
-        let s=self.ends.pop().unwrap();
-        write!(self.writer,"{}",s)?;
+        let s = self.ends.pop().unwrap();
+        write!(self.writer, "{}", s)?;
         Ok(())
     }
 
@@ -50,24 +50,23 @@ impl<T: Write> ElementStack<T> {
         &mut self.writer
     }
 
-    pub fn borrow_move(&mut self,a:fmt::Arguments,last:impl ToString)->Result<(),fmt::Error>{
+    pub fn borrow_move(
+        &mut self,
+        a: fmt::Arguments,
+        last: impl ToString,
+    ) -> Result<(), fmt::Error> {
         self.writer.write_fmt(a)?;
         self.ends.push(last.to_string());
         Ok(())
     }
 
     //We can't use DerefMut because we this struct is not lifetimed.
-    pub fn borrow<'b>(&'b mut self)->Single<'b,T>{
-        Single{
-            writer:&mut self.writer
+    pub fn borrow<'b>(&'b mut self) -> Single<'b, T> {
+        Single {
+            writer: &mut self.writer,
         }
     }
 }
-
-
-
-
-
 
 impl<T: Write> Drop for ElementStack<T> {
     fn drop(&mut self) {
@@ -75,14 +74,14 @@ impl<T: Write> Drop for ElementStack<T> {
         //we do this to force the user to handle the result of
         //writing the last tag failing.
 
-        if  !self.ends.is_empty()  && !std::thread::panicking() {
+        if !self.ends.is_empty() && !std::thread::panicking() {
             //TODO print out element
-            panic!("end() was not called on these elements {:?}",self.ends);
+            panic!("end() was not called on these elements {:?}", self.ends);
         }
     }
 }
 
-/// 
+///
 /// An element that does not have an end tag and thus
 /// does not require that any code be run after it is created.
 ///
@@ -97,27 +96,21 @@ impl<'a, T: Write> Single<'a, T> {
     }
 
     pub fn borrow<'b>(&'b mut self, a: fmt::Arguments<'_>) -> Result<Element<'b, T>, fmt::Error> {
-        let w=&mut self.writer;
+        let w = &mut self.writer;
         w.write_fmt(a)?;
-        Ok(Element {
-            writer: Some(w)
-        })
+        Ok(Element { writer: Some(w) })
     }
     pub fn borrow_single<'b>(&'b mut self, a: fmt::Arguments) -> Result<Single<'b, T>, fmt::Error> {
-        let w=&mut self.writer;
+        let w = &mut self.writer;
         w.write_fmt(a)?;
-        Ok(Single {
-            writer: w,
-        })
+        Ok(Single { writer: w })
     }
 }
-
-
 
 ///
 /// An element with a ending tag.
 /// Once, constructed, the user must call `end()`,
-/// in order to write and handle the error case of writing the 
+/// in order to write and handle the error case of writing the
 /// end tag.
 ///
 pub struct Element<'a, T: Write> {
@@ -134,17 +127,17 @@ impl<'a, T: Write> Drop for Element<'a, T> {
     }
 }
 
-impl<'a,T:Write> core::ops::Deref for Element<'a,T>{
-    type Target=Single<'a,T>;
-    fn deref(&self)->&Single<'a,T>{
-        let m:&T=& *self.writer.as_ref().unwrap();
-        unsafe{&*(m as *const _ as *const _)}
+impl<'a, T: Write> core::ops::Deref for Element<'a, T> {
+    type Target = Single<'a, T>;
+    fn deref(&self) -> &Single<'a, T> {
+        let m: &T = &*self.writer.as_ref().unwrap();
+        unsafe { &*(m as *const _ as *const _) }
     }
 }
-impl<'a,T:Write> core::ops::DerefMut for Element<'a,T>{
-    fn deref_mut(&mut self)->&mut Single<'a,T>{
-        let m:&mut T=&mut *self.writer.as_mut().unwrap();
-        unsafe{&mut *(m as *mut _ as *mut _)}
+impl<'a, T: Write> core::ops::DerefMut for Element<'a, T> {
+    fn deref_mut(&mut self) -> &mut Single<'a, T> {
+        let m: &mut T = &mut *self.writer.as_mut().unwrap();
+        unsafe { &mut *(m as *mut _ as *mut _) }
     }
 }
 
@@ -155,7 +148,7 @@ impl<'a, T: Write> Element<'a, T> {
     pub fn new(writer: &'a mut T, ar: fmt::Arguments) -> Result<Self, fmt::Error> {
         writer.write_fmt(ar)?;
         Ok(Element {
-            writer:Some(writer),
+            writer: Some(writer),
         })
     }
     pub fn write_str(&mut self, s: &str) -> fmt::Result {
@@ -165,17 +158,13 @@ impl<'a, T: Write> Element<'a, T> {
         self.writer.as_mut().unwrap()
     }
     pub fn borrow<'b>(&'b mut self, a: fmt::Arguments) -> Result<Element<'b, T>, fmt::Error> {
-        let w=self.writer.as_mut().unwrap();
+        let w = self.writer.as_mut().unwrap();
         w.write_fmt(a)?;
-        Ok(Element {
-            writer: Some(w),
-        })
+        Ok(Element { writer: Some(w) })
     }
     pub fn borrow_single<'b>(&'b mut self, a: fmt::Arguments) -> Result<Single<'b, T>, fmt::Error> {
-        let w=self.writer.as_mut().unwrap();
+        let w = self.writer.as_mut().unwrap();
         w.write_fmt(a)?;
-        Ok(Single {
-            writer: w,
-        })
+        Ok(Single { writer: w })
     }
 }
