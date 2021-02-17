@@ -1,4 +1,4 @@
-use tagger::*;
+use tagger::prelude::*;
 
 fn main()->core::fmt::Result{
     let mut io=tagger::upgrade(std::io::stdout());

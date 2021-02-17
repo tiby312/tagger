@@ -1,6 +1,6 @@
 
 
-use tagger::*;
+use tagger::prelude::*;
 
 
 fn main()->core::fmt::Result{
@@ -10,10 +10,14 @@ fn main()->core::fmt::Result{
     
     let mut svg=new_element!(&mut io,"<svg viewBox='0 0 {} {}' xmlns='http://www.w3.org/2000/svg'>",width,height)?;
 
-    let mut g=element!(svg,"<g>")?;
+    empty_element!(svg,"<style>.test{{fill:none;stroke:white;stroke-width:0.2}}</style>")?;
 
-    empty_element!(g,"<circle cx='{}' cy='{}' r='{}'/>",50.0,50.0,50.0)?;
-
+    empty_element!(svg,"<rect width='{}' height='{}' rx='{}' yx='{}' style='fill:blue;'/>",width,height,20,20)?;
+    
+    let mut g=element!(svg,"<g class='test'>")?;
+    for r in 0..50{
+        empty_element!(g,"<circle cx='{}' cy='{}' r='{}'/>",50.0,50.0,r)?;
+    }
     end!(g,"</g>")?;
     
     
