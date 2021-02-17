@@ -2,6 +2,7 @@
 
 Build xml / html / svg programatically using element building blocks.
 
+Find it on [github](https://github.com/tiby312/tagger) and [crates.io](https://crates.io/crates/tagger).
 
 ### Example
 
