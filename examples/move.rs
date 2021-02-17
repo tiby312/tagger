@@ -1,10 +1,34 @@
 use tagger::prelude::*;
 
+
+
+
+#[macro_export]
+macro_rules! wr {
+    ($($arg:tt)*) => {
+        move |w|write!(w,$($arg)*)
+    }
+}
+
 fn main() -> core::fmt::Result {
     let io = tagger::upgrade(std::io::stdout());
     let width = 100.0;
     let height = 100.0;
 
+    {
+        use std::fmt::Write;
+        let mut s=String::new();
+        
+
+        let k=tagger::elem::elem2(
+            &mut s,
+            wr!("<{}>","hay"),
+            wr!("{}","</end>")
+        )?;
+        k.finish()?;
+        println!("{}",s);
+    }
+    /*
     let mut stack = tagger::elem::ElementStack::new(
         io,
         format_args!(
@@ -38,6 +62,6 @@ fn main() -> core::fmt::Result {
 
     //pop svg
     stack.end_last()?;
-
+    */
     Ok(())
 }

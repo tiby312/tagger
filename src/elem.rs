@@ -111,6 +111,38 @@ impl<'a, T: Write> Single<'a, T> {
     }
 }
 
+
+
+pub fn elem2<'a,T:Write,F:FnOnce(&mut T)->fmt::Result>(
+    writer:&'a mut T,func:impl FnOnce(&mut T)->fmt::Result,func2:F)->Result<Element2<'a,T,F>,fmt::Error>{
+
+    Element2::new(writer,func,func2)
+}
+pub struct Element2<'a,T,F>{
+    writer:&'a mut T,
+    func:Option<F>
+}
+impl<'a,T:Write,F:FnOnce(&mut T)->fmt::Result> Element2<'a,T,F>{
+    pub fn new(writer:&'a mut T,a:impl FnOnce(&mut T)->fmt::Result,func:F)->Result<Element2<'a,T,F>,fmt::Error>{
+        (a)(writer)?;
+        Ok(Element2{
+            writer,
+            func:Some(func)
+        })
+    }
+    pub fn finish(mut self)->fmt::Result{
+        (self.func.take().unwrap())(self.writer)
+    }
+}
+impl<'a,T,F> Drop for Element2<'a,T,F>{
+    fn drop(&mut self){
+        if !self.func.is_none() && !std::thread::panicking() {
+            panic!("end() must be called on this element",);
+        }
+    }
+}
+
+
 ///
 /// An element with a ending tag.
 /// Once, constructed, the user must call `end()`,
