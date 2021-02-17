@@ -1,3 +1,18 @@
+//
+// # Why do I have to call end!()?
+//
+// I wanted to force the user to handle the error case
+// of writing the end tag failing. If we did this in the destructor of 
+// an element, then the write could silently fail.
+//
+// So we force the user to call end!() by checking
+// that it was called in the destructor.
+//
+// # Why is it a macro?
+//
+// So that the user can pass format arguments if desired.
+//
+
 pub mod prelude {}
 pub use inner::Element;
 pub use inner::Single;
@@ -9,37 +24,55 @@ mod inner {
         writer: &'a mut T,
     }
     impl<'a, T: Write> Single<'a, T> {
+        pub fn new(
+            writer: &'a mut T,
+            ar: fmt::Arguments
+        ) -> Result<Self, fmt::Error> {
+            writer.write_fmt(ar)?;
+            Ok(Single {
+                writer,
+            })
+        }
+
         pub fn borrow<'b>(
             &'b mut self,
-            a: fmt::Arguments<'_>,
-            b: &'b str,
+            a: fmt::Arguments<'_>
         ) -> Result<Element<'b, T>, fmt::Error> {
             self.writer.write_fmt(a)?;
             Ok(Element {
                 writer: self.writer,
-                func: Some(b),
+                func: Some(()),
             })
         }
     }
     pub struct Element<'a, T: Write> {
         writer: &'a mut T,
-        func: Option<&'a str>,
+        func: Option<()>,
     }
     impl<'a, T: Write> Drop for Element<'a, T> {
         fn drop(&mut self) {
-            let _ = self.writer.write_str(self.func.take().unwrap());
+            //Runtime checked linear types.
+            //we do this to force the user to handle the result of
+            //writing the last tag failing.
+            if !self.func.is_none() && !std::thread::panicking(){
+                panic!("should didnt finish");
+            }
         }
     }
     impl<'a, T: Write> Element<'a, T> {
+        
+        pub fn end(mut self,a:fmt::Arguments)->fmt::Result{
+            let _ = self.func.take();
+            self.writer.write_fmt(a)
+        }
         pub fn new(
             writer: &'a mut T,
-            ar: fmt::Arguments,
-            func2: &'a str,
+            ar: fmt::Arguments
         ) -> Result<Self, fmt::Error> {
             writer.write_fmt(ar)?;
             Ok(Element {
                 writer,
-                func: Some(func2),
+                func: Some(()),
             })
         }
         pub fn write_str(&mut self, s: &str) -> fmt::Result {
@@ -50,18 +83,17 @@ mod inner {
         }
         pub fn borrow<'b>(
             &'b mut self,
-            a: fmt::Arguments,
-            b: &'a str,
+            a: fmt::Arguments
         ) -> Result<Element<'b, T>, fmt::Error> {
             self.writer.write_fmt(a)?;
             Ok(Element {
                 writer: self.writer,
-                func: Some(b),
+                func: Some(()),
             })
         }
         pub fn borrow_single<'b>(
             &'b mut self,
-            a: fmt::Arguments,
+            a:fmt::Arguments
         ) -> Result<Single<'b, T>, fmt::Error> {
             self.writer.write_fmt(a)?;
             Ok(Single {
@@ -72,30 +104,38 @@ mod inner {
 }
 
 #[macro_export]
+macro_rules! end {
+    ($dst:expr,$($arg:tt)*) => {
+        $dst.end(format_args!($($arg)*))
+    }
+}
+
+
+#[macro_export]
 macro_rules! new_element {
-    ($dst:expr,$arg1:expr, $tail:expr) => {
-        $crate::Element::new($dst,format_args!($arg1),$tail)
-    };
-    ($dst:expr,$arg1:expr, $tail:expr,$($arg:tt)*) => {
-        $crate::Element::new($dst,format_args!($arg1,$($arg)*),$tail)
+    ($dst:expr,$($arg:tt)*) => {
+        $crate::Element::new($dst,format_args!($($arg)*))
     }
 }
 #[macro_export]
 macro_rules! element {
-    ($dst:expr,$arg1:expr, $tail:expr) => {
-        $dst.borrow(format_args!($arg1),$tail)
-    };
-    ($dst:expr,$arg1:expr, $tail:expr,$($arg:tt)*) => {
-        $dst.borrow(format_args!($arg1,$($arg)*),$tail)
+    ($dst:expr,$($arg:tt)*) => {
+        $dst.borrow(format_args!($($arg)*))
     }
 }
+
 #[macro_export]
 macro_rules! empty_element {
-    ($dst:expr,$arg1:expr) => {
-        $dst.borrow_single(format_args!($arg1))
-    };
-    ($dst:expr,$arg1:expr,$($arg:tt)*) => {
-        $dst.borrow_single(format_args!($arg1,$($arg)*))
+    ($dst:expr,$($arg:tt)*) => {
+        $dst.borrow_single(format_args!($($arg)*))
+    }
+}
+
+
+#[macro_export]
+macro_rules! new_empty_element {
+    ($dst:expr,$($arg:tt)*) => {
+        $crate::Single::new($dst,format_args!($($arg)*))
     }
 }
 
