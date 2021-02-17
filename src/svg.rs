@@ -1,4 +1,4 @@
-use super::*;    
+use super::*;
 
 pub struct PathCommander<'a, 'b> {
     writer: &'a mut fmt::Formatter<'b>,

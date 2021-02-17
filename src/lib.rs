@@ -1,7 +1,6 @@
-
 //! This crate provides primitives to build up a html/xml/svg document programatically,
 //! as opposed to a templating type engine.
-//! 
+//!
 //! ### Why are these all macros?
 //!
 //! So that the user can pass as many format arguments as desired.
@@ -9,7 +8,7 @@
 //! ### Why do I have to call `end!()`?
 //!
 //! This is to force the user to handle the error case
-//! of writing the end tag. If we did this in the destructor of 
+//! of writing the end tag. If we did this in the destructor of
 //! an element, then the write could silently fail.
 //!
 //! So we enforce that `end!()` was called at runtime by checking
@@ -18,7 +17,6 @@
 //! does nothing.
 //!
 //!
-
 
 ///Contains primitives to make some svg constructs like paths and polylines.
 pub mod svg;
@@ -32,10 +30,8 @@ pub mod prelude {
     pub use super::new_empty_element;
 }
 
-
 ///Contains the structs that the element macros work with internally.
 pub mod elem;
-
 
 ///Write the ending tag for an element.
 #[macro_export]
@@ -77,10 +73,7 @@ macro_rules! new_empty_element {
     }
 }
 
-
 use core::fmt;
-
-
 
 ///Used by [`upgrade`]
 pub struct WriterAdaptor<T> {
