@@ -1,7 +1,19 @@
 use core::fmt;
 use core::fmt::Write;
 
-
+/// A non-lifetimed `Element`.
+///
+/// The [`Element`] struct requires a lifetime. 
+/// If you want to pass an element between functions, this can be difficult.
+/// Instead you can use this struct.
+///
+/// Unlike `Element`, the user specifies the end tag upfront. This is done
+/// To make it easier for a caller who might not have knowledge of what
+/// elements are on the stack.
+///
+/// If you make a function that returns this struct, the user should call
+/// `finish()` because they probably do not know how many elements are on the stack.
+///
 pub struct ElementStack<T:Write>{
     writer:T,
     ends:Vec<String>
@@ -70,7 +82,10 @@ impl<T: Write> Drop for ElementStack<T> {
     }
 }
 
-
+/// 
+/// An element that does not have an end tag and thus
+/// does not require that any code be run after it is created.
+///
 #[repr(transparent)]
 pub struct Single<'a, T: Write> {
     writer: &'a mut T,
@@ -99,7 +114,12 @@ impl<'a, T: Write> Single<'a, T> {
 
 
 
-
+///
+/// An element with a ending tag.
+/// Once, constructed, the user must call `end()`,
+/// in order to write and handle the error case of writing the 
+/// end tag.
+///
 pub struct Element<'a, T: Write> {
     writer: Option<&'a mut T>,
 }
