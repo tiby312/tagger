@@ -21,7 +21,7 @@
 ///Contains primitives to make some svg constructs like paths and polylines.
 pub mod svg;
 
-///The prelude
+///The prelude to import the element manipulation convenience macros.
 pub mod prelude {
     pub use super::element;
     pub use super::empty_element;
