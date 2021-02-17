@@ -14,7 +14,8 @@ fn main() -> core::fmt::Result {
 
     empty_element!(
         svg,
-        "<style>.test{{fill:none;stroke:white;stroke-width:3}}</style>"
+        "{}",
+        "<style>.test{fill:none;stroke:white;stroke-width:3}</style>"
     )?;
 
     empty_element!(

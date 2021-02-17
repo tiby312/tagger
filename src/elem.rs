@@ -50,6 +50,10 @@ impl<T: Write> ElementStack<T> {
         &mut self.writer
     }
 
+    pub fn single(&mut self, a: fmt::Arguments) -> fmt::Result {
+        self.writer.write_fmt(a)?;
+        Ok(())
+    }
     pub fn borrow_move(
         &mut self,
         a: fmt::Arguments,
