@@ -1,17 +1,13 @@
 //! This crate provides primitives to build up a html/xml/svg document programatically,
 //! as opposed to a templating type engine.
 //!
-//! ### Why are these all macros?
-//!
-//! So that the user can pass as many format arguments as desired.
-//!
-//! ### Why do I have to call `end!()`?
+//! ### Why do I have to call `end()`?
 //!
 //! This is to force the user to handle the error case
 //! of writing the end tag. If we did this in the destructor of
 //! an element, then the write could silently fail.
 //!
-//! So we enforce that `end!()` was called at runtime by checking
+//! So we enforce that `end()` was called at runtime by checking
 //! a flag in the destructor and panic if it was not called.
 //! If the destructor is called as part of unwinding, then it
 //! does nothing.
@@ -23,57 +19,82 @@ pub mod svg;
 
 ///The prelude to import the element manipulation convenience macros.
 pub mod prelude {
-    pub use super::element;
-    pub use super::empty_element;
-    pub use super::end;
-    pub use super::new_element;
-    pub use super::new_empty_element;
+    pub use super::wr;
+    pub use core::fmt::Write;
 }
 
-///Contains the structs that the element macros work with internally.
-pub mod elem;
-
-///Write the ending tag for an element.
-#[macro_export]
-macro_rules! end {
-    ($dst:expr,$($arg:tt)*) => {
-        $dst.end(format_args!($($arg)*))
-    }
-}
-
-///Create a new element from a writer.
-#[macro_export]
-macro_rules! new_element {
-    ($dst:expr,$($arg:tt)*) => {
-        $crate::elem::Element::new($dst,format_args!($($arg)*))
-    }
-}
-
-///Create a new element from another element.
-#[macro_export]
-macro_rules! element {
-    ($dst:expr,$($arg:tt)*) => {
-        $dst.borrow(format_args!($($arg)*))
-    }
-}
-
-///Create a element with no ending tag from an element.
-#[macro_export]
-macro_rules! empty_element {
-    ($dst:expr,$($arg:tt)*) => {
-        $dst.borrow_single(format_args!($($arg)*))
-    }
-}
-
-///Create a element with no ending tag.
-#[macro_export]
-macro_rules! new_empty_element {
-    ($dst:expr,$($arg:tt)*) => {
-        $crate::elem::Single::new($dst,format_args!($($arg)*))
-    }
-}
 
 use core::fmt;
+
+
+
+use fmt::Write;
+
+///Convenience macro to reduce code.
+///Create a closure that will use write!() with the formatting arguments.
+#[macro_export]
+macro_rules! wr {
+    ($($arg:tt)*) => {
+        move |w|write!(w,$($arg)*)
+    }
+}
+
+
+///Write a single element with no ending tag.
+pub fn single<T:Write>(w:&mut T,a:impl FnOnce(&mut T)->fmt::Result)->fmt::Result{
+    a(w)
+}
+
+///Write an element.
+pub fn elem<'a,T:Write,F:FnOnce(&mut T)->fmt::Result>(
+    writer:&'a mut T,func:impl FnOnce(&mut T)->fmt::Result,func2:F)->Result<Element<'a,T,F>,fmt::Error>{
+    Element::new(writer,func,func2)
+}
+
+///The base element structure.
+///It will panic if the user doesnt properly
+///call end() on it.
+pub struct Element<'a,T,F>{
+    writer:&'a mut T,
+    func:Option<F>
+}
+impl<'a,T:Write,F:FnOnce(&mut T)->fmt::Result> Element<'a,T,F>{
+    ///Write an element.
+    pub fn new(writer:&'a mut T,a:impl FnOnce(&mut T)->fmt::Result,func:F)->Result<Element<'a,T,F>,fmt::Error>{
+        (a)(writer)?;
+        Ok(Element{
+            writer,
+            func:Some(func)
+        })
+    }
+
+    ///Write an element with no end tag.
+    pub fn single(&mut self,a:impl FnOnce(&mut T)->fmt::Result)->fmt::Result{
+        (a)(self.writer)
+    }
+
+    ///Start a new element.
+    pub fn elem<'b,F1:FnOnce(&mut T)->fmt::Result>(&'b mut self,a:impl FnOnce(&mut T)->fmt::Result,func:F1)->Result<Element<'b,T,F1>,fmt::Error>{
+        (a)(self.writer)?;
+        Ok(Element{
+            writer:self.writer,
+            func:Some(func)
+        })
+    }
+
+    ///End the current element.
+    pub fn end(mut self)->fmt::Result{
+        (self.func.take().unwrap())(self.writer)
+    }
+}
+impl<'a,T,F> Drop for Element<'a,T,F>{
+    fn drop(&mut self){
+        if !self.func.is_none() && !std::thread::panicking() {
+            panic!("end() was not called on this element",);
+        }
+    }
+}
+
 
 ///Used by [`upgrade`]
 pub struct WriterAdaptor<T> {
