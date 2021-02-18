@@ -20,6 +20,7 @@ pub mod svg;
 ///The prelude to import the element manipulation convenience macros.
 pub mod prelude {
     pub use super::wr;
+    pub use super::wrstr;
     pub use core::fmt::Write;
 }
 
@@ -35,6 +36,18 @@ macro_rules! wr {
         move |w|write!(w,$($arg)*)
     }
 }
+
+
+
+///Convenience macro to reduce code.
+///Create a closure that will use write!() with the formatting arguments.
+#[macro_export]
+macro_rules! wrstr {
+    ($arg:tt) => {
+        move |w|write!(w,"{}",$arg)
+    }
+}
+
 
 ///Write a single element with no ending tag.
 pub fn single<T: Write>(w: &mut T, a: impl FnOnce(&mut T) -> fmt::Result) -> fmt::Result {
