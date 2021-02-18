@@ -3,12 +3,10 @@ use tagger::prelude::*;
 fn main() -> core::fmt::Result {
     let mut io = tagger::upgrade(std::io::stdout());
 
-    let mut root = new_empty_element!(&mut io, "<!DOCTYPE html>")?;
-    let mut html = element!(root, "<html>")?;
+    tagger::single(&mut io, wr!("<!DOCTYPE html>"))?;
+    let mut html = tagger::elem(&mut io, wr!("<html>"),wr!("</html>"))?;
 
-    empty_element!(
-        html,
-        "<style>{}</style>",
+    html.single(wr!("<style>{}</style>",
         "table, th, td {
       border: 1px solid black;
       border-collapse: collapse;
@@ -18,22 +16,22 @@ fn main() -> core::fmt::Result {
         from {background-color: red;}
         to {background-color: blue;}
     }"
-    )?;
+    ))?;
 
-    let mut table = element!(html, "<table style='width:{}%'>", 100)?;
+    let mut table = html.elem(wr!("<table style='width:{}%'>", 100),wr!("</table>"))?;
 
     for i in 0..20 {
-        let mut tr = element!(table, "<tr>")?;
+        let mut tr = table.elem(wr!("<tr>"),wr!("</tr>"))?;
 
-        empty_element!(tr, "<th>Hay {}:1</th>", i)?;
-        empty_element!(tr, "<th>Hay {}:2</th>", i)?;
-        empty_element!(tr, "<th>Hay {}:3</th>", i)?;
+        tr.single(wr!("<th>Hay {}:1</th>", i))?;
+        tr.single(wr!("<th>Hay {}:2</th>", i))?;
+        tr.single(wr!("<th>Hay {}:3</th>", i))?;
 
-        end!(tr, "</tr>")?;
+        tr.end()?;
     }
 
-    end!(table, "</table>")?;
-    end!(html, "</html>")?;
-
+    table.end()?;
+    html.end()?;
+    
     Ok(())
 }

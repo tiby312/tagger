@@ -23,57 +23,66 @@ pub mod svg;
 
 ///The prelude to import the element manipulation convenience macros.
 pub mod prelude {
-    pub use super::element;
-    pub use super::empty_element;
-    pub use super::end;
-    pub use super::new_element;
-    pub use super::new_empty_element;
+    pub use super::wr;
+    pub use core::fmt::Write;
 }
 
-///Contains the structs that the element macros work with internally.
-pub mod elem;
-
-///Write the ending tag for an element.
-#[macro_export]
-macro_rules! end {
-    ($dst:expr,$($arg:tt)*) => {
-        $dst.end(format_args!($($arg)*))
-    }
-}
-
-///Create a new element from a writer.
-#[macro_export]
-macro_rules! new_element {
-    ($dst:expr,$($arg:tt)*) => {
-        $crate::elem::Element::new($dst,format_args!($($arg)*))
-    }
-}
-
-///Create a new element from another element.
-#[macro_export]
-macro_rules! element {
-    ($dst:expr,$($arg:tt)*) => {
-        $dst.borrow(format_args!($($arg)*))
-    }
-}
-
-///Create a element with no ending tag from an element.
-#[macro_export]
-macro_rules! empty_element {
-    ($dst:expr,$($arg:tt)*) => {
-        $dst.borrow_single(format_args!($($arg)*))
-    }
-}
-
-///Create a element with no ending tag.
-#[macro_export]
-macro_rules! new_empty_element {
-    ($dst:expr,$($arg:tt)*) => {
-        $crate::elem::Single::new($dst,format_args!($($arg)*))
-    }
-}
 
 use core::fmt;
+
+
+
+use fmt::Write;
+
+#[macro_export]
+macro_rules! wr {
+    ($($arg:tt)*) => {
+        move |w|write!(w,$($arg)*)
+    }
+}
+
+
+pub fn single<T:Write>(w:&mut T,a:impl FnOnce(&mut T)->fmt::Result)->fmt::Result{
+    a(w)
+}
+pub fn elem<'a,T:Write,F:FnOnce(&mut T)->fmt::Result>(
+    writer:&'a mut T,func:impl FnOnce(&mut T)->fmt::Result,func2:F)->Result<Element<'a,T,F>,fmt::Error>{
+    Element::new(writer,func,func2)
+}
+pub struct Element<'a,T,F>{
+    writer:&'a mut T,
+    func:Option<F>
+}
+impl<'a,T:Write,F:FnOnce(&mut T)->fmt::Result> Element<'a,T,F>{
+    pub fn new(writer:&'a mut T,a:impl FnOnce(&mut T)->fmt::Result,func:F)->Result<Element<'a,T,F>,fmt::Error>{
+        (a)(writer)?;
+        Ok(Element{
+            writer,
+            func:Some(func)
+        })
+    }
+    pub fn single(&mut self,a:impl FnOnce(&mut T)->fmt::Result)->fmt::Result{
+        (a)(self.writer)
+    }
+    pub fn elem<'b,F1:FnOnce(&mut T)->fmt::Result>(&'b mut self,a:impl FnOnce(&mut T)->fmt::Result,func:F1)->Result<Element<'b,T,F1>,fmt::Error>{
+        (a)(self.writer)?;
+        Ok(Element{
+            writer:self.writer,
+            func:Some(func)
+        })
+    }
+    pub fn end(mut self)->fmt::Result{
+        (self.func.take().unwrap())(self.writer)
+    }
+}
+impl<'a,T,F> Drop for Element<'a,T,F>{
+    fn drop(&mut self){
+        if !self.func.is_none() && !std::thread::panicking() {
+            panic!("end() must be called on this element",);
+        }
+    }
+}
+
 
 ///Used by [`upgrade`]
 pub struct WriterAdaptor<T> {
