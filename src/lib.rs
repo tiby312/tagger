@@ -23,10 +23,7 @@ pub mod prelude {
     pub use core::fmt::Write;
 }
 
-
 use core::fmt;
-
-
 
 use fmt::Write;
 
@@ -39,62 +36,71 @@ macro_rules! wr {
     }
 }
 
-
 ///Write a single element with no ending tag.
-pub fn single<T:Write>(w:&mut T,a:impl FnOnce(&mut T)->fmt::Result)->fmt::Result{
+pub fn single<T: Write>(w: &mut T, a: impl FnOnce(&mut T) -> fmt::Result) -> fmt::Result {
     a(w)
 }
 
 ///Write an element.
-pub fn elem<'a,T:Write,F:FnOnce(&mut T)->fmt::Result>(
-    writer:&'a mut T,func:impl FnOnce(&mut T)->fmt::Result,func2:F)->Result<Element<'a,T,F>,fmt::Error>{
-    Element::new(writer,func,func2)
+pub fn elem<'a, T: Write, F: FnOnce(&mut T) -> fmt::Result>(
+    writer: &'a mut T,
+    func: impl FnOnce(&mut T) -> fmt::Result,
+    func2: F,
+) -> Result<Element<'a, T, F>, fmt::Error> {
+    Element::new(writer, func, func2)
 }
 
 ///The base element structure.
 ///It will panic if the user doesnt properly
 ///call end() on it.
-pub struct Element<'a,T,F>{
-    writer:&'a mut T,
-    func:Option<F>
+pub struct Element<'a, T, F> {
+    writer: &'a mut T,
+    func: Option<F>,
 }
-impl<'a,T:Write,F:FnOnce(&mut T)->fmt::Result> Element<'a,T,F>{
+impl<'a, T: Write, F: FnOnce(&mut T) -> fmt::Result> Element<'a, T, F> {
     ///Write an element.
-    pub fn new(writer:&'a mut T,a:impl FnOnce(&mut T)->fmt::Result,func:F)->Result<Element<'a,T,F>,fmt::Error>{
+    pub fn new(
+        writer: &'a mut T,
+        a: impl FnOnce(&mut T) -> fmt::Result,
+        func: F,
+    ) -> Result<Element<'a, T, F>, fmt::Error> {
         (a)(writer)?;
-        Ok(Element{
+        Ok(Element {
             writer,
-            func:Some(func)
+            func: Some(func),
         })
     }
 
     ///Write an element with no end tag.
-    pub fn single(&mut self,a:impl FnOnce(&mut T)->fmt::Result)->fmt::Result{
+    pub fn single(&mut self, a: impl FnOnce(&mut T) -> fmt::Result) -> fmt::Result {
         (a)(self.writer)
     }
 
     ///Start a new element.
-    pub fn elem<'b,F1:FnOnce(&mut T)->fmt::Result>(&'b mut self,a:impl FnOnce(&mut T)->fmt::Result,func:F1)->Result<Element<'b,T,F1>,fmt::Error>{
+    pub fn elem<'b, F1: FnOnce(&mut T) -> fmt::Result>(
+        &'b mut self,
+        a: impl FnOnce(&mut T) -> fmt::Result,
+        func: F1,
+    ) -> Result<Element<'b, T, F1>, fmt::Error> {
         (a)(self.writer)?;
-        Ok(Element{
-            writer:self.writer,
-            func:Some(func)
+        Ok(Element {
+            writer: self.writer,
+            func: Some(func),
         })
     }
 
     ///End the current element.
-    pub fn end(mut self)->fmt::Result{
+    pub fn end(mut self) -> fmt::Result {
         (self.func.take().unwrap())(self.writer)
     }
 }
-impl<'a,T,F> Drop for Element<'a,T,F>{
-    fn drop(&mut self){
+impl<'a, T, F> Drop for Element<'a, T, F> {
+    fn drop(&mut self) {
         if !self.func.is_none() && !std::thread::panicking() {
             panic!("end() was not called on this element",);
         }
     }
 }
-
 
 ///Used by [`upgrade`]
 pub struct WriterAdaptor<T> {

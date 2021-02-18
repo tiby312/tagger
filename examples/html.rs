@@ -4,9 +4,10 @@ fn main() -> core::fmt::Result {
     let mut io = tagger::upgrade(std::io::stdout());
 
     tagger::single(&mut io, wr!("<!DOCTYPE html>"))?;
-    let mut html = tagger::elem(&mut io, wr!("<html>"),wr!("</html>"))?;
+    let mut html = tagger::elem(&mut io, wr!("<html>"), wr!("</html>"))?;
 
-    html.single(wr!("<style>{}</style>",
+    html.single(wr!(
+        "<style>{}</style>",
         "table, th, td {
       border: 1px solid black;
       border-collapse: collapse;
@@ -18,10 +19,10 @@ fn main() -> core::fmt::Result {
     }"
     ))?;
 
-    let mut table = html.elem(wr!("<table style='width:{}%'>", 100),wr!("</table>"))?;
+    let mut table = html.elem(wr!("<table style='width:{}%'>", 100), wr!("</table>"))?;
 
     for i in 0..20 {
-        let mut tr = table.elem(wr!("<tr>"),wr!("</tr>"))?;
+        let mut tr = table.elem(wr!("<tr>"), wr!("</tr>"))?;
 
         tr.single(wr!("<th>Hay {}:1</th>", i))?;
         tr.single(wr!("<th>Hay {}:2</th>", i))?;
@@ -32,6 +33,6 @@ fn main() -> core::fmt::Result {
 
     table.end()?;
     html.end()?;
-    
+
     Ok(())
 }
