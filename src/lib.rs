@@ -49,22 +49,163 @@ macro_rules! wrstr {
 }
 
 
-///Write a single element with no ending tag.
-pub fn single<T: Write>(w: &mut T, a: impl FnOnce(&mut T) -> fmt::Result) -> fmt::Result {
-    a(w)
+
+
+
+
+pub struct TagBuilder<'a,T>{
+    inner:&'a mut T
+}
+impl<'a,T:Write> TagBuilder<'a,T>{
+    pub fn new(inner:&'a mut T,tag:&str)->Result<TagBuilder<'a,T>,core::fmt::Error>{
+        write!(inner,"<{}",tag)?;
+        Ok(TagBuilder{inner})
+    }
+
+    pub fn with_attr(self,s:&str,func:impl FnOnce(&mut T)->core::fmt::Result)->Result<TagBuilder<'a,T>,core::fmt::Error>{
+        write!(self.inner," {}=",s)?;
+        write!(self.inner,"\"")?;
+        func(self.inner)?;
+        write!(self.inner,"\"")?;
+        Ok(self)
+    }
+    pub fn attr(self,s:&str,val:impl core::fmt::Display)->Result<TagBuilder<'a,T>,core::fmt::Error>{
+        write!(self.inner," {}=\"{}\"",s,val)?;
+        Ok(self)
+    }
+
+    fn finish(self)->core::fmt::Result{
+        write!(self.inner,">")?;
+        Ok(())
+    }
+    fn finish_single(self)->core::fmt::Result{
+        write!(self.inner,"/>")?;
+        Ok(())
+    }
+    fn finish_prolog(self)->core::fmt::Result{
+        write!(self.inner,"?>")?;
+        Ok(())
+    }
 }
 
-///Write an element.
-pub fn elem<'a, T: Write, F: FnOnce(&mut T) -> fmt::Result>(
-    writer: &'a mut T,
-    func: impl FnOnce(&mut T) -> fmt::Result,
-    func2: F,
-) -> Result<Element<'a, T, F>, fmt::Error> {
-    Element::new(writer, func, func2)
+
+pub fn xml<'a,T:Write>(writer:&'a mut T)->Result<XML<'a,T,impl FnOnce(&mut T)->fmt::Result+'a>,fmt::Error>{
+    Ok(XML{
+        inner:Element::new(writer,
+            move|_|Ok(()),
+            move|_  |Ok(())
+        )?
+    })
+}
+pub struct XML<'a,T,F>{
+    inner:Element<'a,T,F>
+}
+impl<'a,T:Write,F: FnOnce(&mut T) -> fmt::Result> XML<'a,T,F>{
+    pub fn single<'b>(&'b mut self,tag:&'b str,func:impl FnOnce(TagBuilder<T>)->Result<TagBuilder<T>,fmt::Error>+'b)->fmt::Result
+    {
+        func(TagBuilder::new(self.inner.writer,tag)?)?.finish_single()
+    }
+
+    pub fn move_inner(self,func:impl FnOnce(&mut T)->fmt::Result)->Result<Self,fmt::Error>
+    {
+        func(self.inner.writer)?;
+        Ok(self)
+    }
+    pub fn inner(&mut self,func:impl FnOnce(&mut T)->fmt::Result)->fmt::Result
+    {
+        func(self.inner.writer)
+    }
+    pub fn inner_str(&mut self,s:&str)->fmt::Result
+    {
+        write!(self.inner.writer,"{}",s)
+    }
+
+    
+    pub fn declaration(&mut self,tag:&str,func:impl FnOnce(&mut T)->fmt::Result)->fmt::Result{
+        let w=&mut self.inner.writer;
+        write!(w,"<!{} ",tag)?;
+        func(w)?;
+        write!(w,">")?;
+        Ok(())
+    }
+    pub fn prolog(&mut self,tag:&str,func:impl FnOnce(TagBuilder<T>)->Result<TagBuilder<T>,fmt::Error>)->fmt::Result{
+        let w=&mut self.inner.writer;
+        write!(w,"<?{}",tag)?;
+        func(TagBuilder{inner:w})?.finish_prolog()?;
+        Ok(())
+    }
+    
+    pub fn comment(&mut self,func:impl FnOnce(&mut T)->fmt::Result)->fmt::Result{
+        let w=&mut self.inner.writer;
+        write!(w,"<!--")?;
+        func(w)?;
+        write!(w," -->")
+    }
+
+    pub fn elem_simple<'b>(&'b mut self,tag:&'b str)->Result<XML<'b,T,impl FnOnce(&mut T)->fmt::Result+'b>,fmt::Error>{
+        self.elem(tag,|w|Ok(w))   
+    }
+    pub fn elem<'b>(&'b mut self,tag:&'b str,func:impl FnOnce(TagBuilder<T>)->Result<TagBuilder<T>,fmt::Error>+'b)->
+        Result<XML<'b,T,impl FnOnce(&mut T)->fmt::Result+'b>,fmt::Error>{
+        Ok(XML{
+            inner:self.inner.elem(move|w|func(TagBuilder::new(w,tag)?)?.finish(),move|w|write!(w,"</{}>",tag) )?
+        })
+    }
+    pub fn end(self)->fmt::Result{
+        self.inner.end()
+    }
 }
 
 
+pub fn json<'a,T:Write>(writer:&'a mut T)->Result<JSON<'a,T,impl FnOnce(&mut T)->fmt::Result+'a>,fmt::Error>{
+    Ok(
+        JSON{
+            inner:Element::new(
+                    writer,
+                    move|w| {
+                        write!(w,"{{")
+                    },
+                    move|w|write!(w,"}}")
+                    )?,
+            atleast_one_attr:false
+        }
+    )
+}
+pub struct JSON<'a,T,F>{
+    inner:Element<'a,T,F>,
+    atleast_one_attr:bool
+}
+impl<'a,T: Write, F: FnOnce(&mut T) -> fmt::Result> JSON<'a,T,F>{
 
+    pub fn elem<'b>(&'b mut self,tag:&'b str)->Result<JSON<'b,T,impl FnOnce(&mut T)->fmt::Result+'b>,fmt::Error>{
+        let atleast_one_attr=self.atleast_one_attr;
+        Ok(JSON{
+            inner:self.inner.elem(move|w|{
+                    if atleast_one_attr {
+                        write!(w,",\"{}\":{{",tag)?
+                    }else{
+                        write!(w,"\"{}\":{{",tag)?
+                    } 
+                    Ok(())
+                } ,move|w|write!(w,"}}"))?,
+            atleast_one_attr:false
+        })
+    }
+
+    pub fn inner(&mut self,s:&str,f:impl core::fmt::Display)->fmt::Result{
+        if self.atleast_one_attr {
+            write!(self.inner.writer,",\"{}\":\"{}\"",s,f)?
+        }else{
+            write!(self.inner.writer,"\"{}\":\"{}\"",s,f)?
+        }
+        self.atleast_one_attr=true;
+        Ok(())
+    }
+
+    pub fn end(self)->fmt::Result{
+        self.inner.end()
+    }
+}
 
 
 ///The base element structure.
@@ -84,7 +225,7 @@ impl<'a, T: Write, F: FnOnce(&mut T) -> fmt::Result> Element<'a, T, F> {
         (a)(writer)?;
         Ok(Element {
             writer,
-            func: Some(func),
+            func: Some(func)
         })
     }
 
@@ -101,7 +242,7 @@ impl<'a, T: Write, F: FnOnce(&mut T) -> fmt::Result> Element<'a, T, F> {
         (a.0)(self.writer)?;
         Ok(Element {
             writer: self.writer,
-            func: Some(a.1),
+            func: Some(a.1)
         })
     }
 
@@ -114,7 +255,7 @@ impl<'a, T: Write, F: FnOnce(&mut T) -> fmt::Result> Element<'a, T, F> {
         (a)(self.writer)?;
         Ok(Element {
             writer: self.writer,
-            func: Some(func),
+            func: Some(func)
         })
     }
 
@@ -123,6 +264,8 @@ impl<'a, T: Write, F: FnOnce(&mut T) -> fmt::Result> Element<'a, T, F> {
         (self.func.take().unwrap())(self.writer)
     }
 }
+
+
 impl<'a, T, F> Drop for Element<'a, T, F> {
     fn drop(&mut self) {
         if !self.func.is_none() && !std::thread::panicking() {

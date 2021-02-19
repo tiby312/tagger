@@ -1,22 +1,31 @@
 use tagger::prelude::*;
 
 
+struct Sentinal;
+
+
 
 
 fn main() -> core::fmt::Result {
     let mut io = tagger::upgrade(std::io::stdout());
 
-    let mut root = tagger::elem(&mut io, wrstr!("{"), wrstr!("}"))?;
+    
+    let mut root = tagger::json(&mut io)?;
 
-    let mut gloss=root.elem(wrstr!(r#"menu": {"#),wrstr!("}"))?;
-    gloss.single(wr!(r#""id":"file","#))?;
-    gloss.single(wr!(r#"value:file,"#))?;
-    let mut p=gloss.elem(wrstr!(r#""popup":{"#),wrstr!("}"))?;
-    p.single(wrstr!(r#""hay":"foo""#))?;
-
+    root.inner("chicken","pizza")?;
+    let mut p=root.elem("potato")?;
+    p.inner("flop","flap")?;
+    p.inner("ddd",5)?;
+    p.inner("dflap",42)?;
+    
+    let mut k=p.elem("table")?;
+    k.inner("kay",4)?;
+    k.inner("fadf",3)?;
+    k.end()?;
     p.end()?;
-    gloss.end()?;
+
 
     root.end()?;
+    
     Ok(())
 }
