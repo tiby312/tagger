@@ -57,18 +57,20 @@ pub struct PathBuilder<T>{
 
 
 #[repr(transparent)]
-pub struct AttrBuilder<T>{
-    inner:T
+pub struct AttrBuilder<'a,T>{
+    inner:&'a mut T
 }
-impl<T:Write> AttrBuilder<T>{
+impl<'a,T:Write> AttrBuilder<'a,T>{
     /*
     pub fn with_tag(inner:&'a mut T,tag:&str)->Result<&'a mut AttrBuilder<T>,fmt::Error>{
         write!(inner,"<{}",tag)?;
         Ok(AttrBuilder::new(inner))
     }
     */
-    pub fn new<'a>(inner:&'a mut T)->&'a mut AttrBuilder<T>{
-        unsafe{&mut *(inner as *mut _ as *mut _)}
+    pub fn new(inner:&'a mut T)->AttrBuilder<'a,T>{
+        AttrBuilder{
+            inner
+        }
     }
 /*
     pub fn path(&mut self)->&mut PathBuilder<T>{
@@ -92,22 +94,29 @@ impl<T:Write> AttrBuilder<T>{
 pub fn xml<'a,T:Write>(writer:&'a mut T)->Result<XML<'a,T,impl FnOnce(&mut T)->fmt::Result+'a>,fmt::Error>{
     Ok(XML{
         inner:Element::new(writer,
-            move|_|Ok(()),
             move|_  |Ok(())
-        )?
+        )
     })
 }
 pub struct XML<'a,T,F>{
     inner:Element<'a,T,F>
 }
 impl<'a,T:Write,F: FnOnce(&mut T) -> fmt::Result> XML<'a,T,F>{
-    pub fn single<'b>(&'b mut self,tag:&'b str,func:impl FnOnce(&mut AttrBuilder<T>)->Result<&mut AttrBuilder<T>,fmt::Error>+'b)->fmt::Result
+    pub fn single<'b,FF>(
+        &'b mut self,
+        tag:&'b str,
+        func:FF
+    )->fmt::Result
+    where for<'x,'y> FF: FnOnce(&'x mut AttrBuilder<'y,T>)->Result<&'x mut AttrBuilder<'y,T>,fmt::Error>
     {
-        let w=&mut self.inner.writer;
-        write!(*w,"<{} ",tag)?;
-        let k=AttrBuilder::new(*w);
-        func(k)?;
-        write!(*w,">")
+        //THese are amazing!!!
+        //https://doc.rust-lang.org/nomicon/hrtb.html
+
+        write!(self.inner.writer,"<{} ",tag)?;
+        let mut k=AttrBuilder::new(self.inner.writer);
+        func(&mut k)?;
+    
+        write!(self.inner.writer,">")
     }
 
     pub fn move_inner(self,func:impl FnOnce(&mut T)->fmt::Result)->Result<Self,fmt::Error>
@@ -127,40 +136,63 @@ impl<'a,T:Write,F: FnOnce(&mut T) -> fmt::Result> XML<'a,T,F>{
     
     pub fn declaration(&mut self,tag:&str,func:impl FnOnce(&mut T)->fmt::Result)->fmt::Result{
         let w=&mut self.inner.writer;
-        write!(*w,"<!{} ",tag)?;
-        func(*w)?;
-        write!(*w,">")?;
+        write!(w,"<!{} ",tag)?;
+        func(w)?;
+        write!(w,">")?;
         Ok(())
     }
     
-    pub fn prolog<'x,'z>(&mut self,tag:&str,func:impl FnOnce(&mut AttrBuilder<T>)->Result<&mut AttrBuilder<T>,fmt::Error>)->fmt::Result{
-        let w=&mut self.inner.writer;
-        write!(*w,"<?{}",tag)?;
-        func(AttrBuilder::new(*w))?;
-        write!(*w,"?>")?;
+    
+    pub fn prolog<'b,FF>(
+        &'b mut self,
+        tag:&str,
+        func:FF )->fmt::Result
+        where for<'x,'y> FF:FnOnce(&'x mut AttrBuilder<'y,T>)->Result<&'x mut AttrBuilder<'y,T>,fmt::Error>
+    {
+        
+        write!(self.inner.writer,"<?{}",tag)?;
+        let mut k=AttrBuilder::new(self.inner.writer);
+        func(&mut k)?;
+        write!(self.inner.writer,"?>")?;
         Ok(())
     }
     
     pub fn comment(&mut self,func:impl FnOnce(&mut T)->fmt::Result)->fmt::Result{
         let w=&mut self.inner.writer;
-        write!(*w,"<!--")?;
-        func(*w)?;
-        write!(*w," -->")
+        write!(w,"<!--")?;
+        func(w)?;
+        write!(w," -->")
     }
-
+    
     pub fn elem_simple<'b>(&'b mut self,tag:&'b str)->Result<XML<'b,T,impl FnOnce(&mut T)->fmt::Result+'b>,fmt::Error>{
         self.elem(tag,|w|Ok(w))   
     }
-    pub fn elem<'b,'x,'z>(&'b mut self,tag:&'b str,func:impl FnOnce(&mut AttrBuilder<T>)->Result<&mut AttrBuilder<T>,fmt::Error>+'b)->
-        Result<XML<'b,T,impl FnOnce(&mut T)->fmt::Result+'b>,fmt::Error> where 'x:'z,T:'z+'x{
+    
+    
+    pub fn elem<'b,FF>(
+        &'b mut self,
+        tag:&'b str,
+        func:FF
+    )->
+        Result<XML<'b,T,impl FnOnce(&mut T)->fmt::Result+'b>,fmt::Error> 
+    where for<'x,'y> FF:FnOnce(&'x mut AttrBuilder<'y,T>)->Result<&'x mut AttrBuilder<'y,T>,fmt::Error>
+    {
+        
+            write!(self.inner.writer,"<{}",tag)?;
+            
+            {
+                let w=self.inner.get_writer();
+                let mut k=AttrBuilder::new(w);
+                func(&mut k)?;
+            }
+            write!(self.inner.writer,">")?;
+        
+
         Ok(XML{
-            inner:self.inner.elem(move|w|{
-                write!(w,"<{}",tag)?;
-                func(AttrBuilder::new(w))?;
-                write!(w,">")
-            },move|w|write!(w,"</{}>",tag) )?
+            inner:Element::new(self.inner.writer,move|w|write!(w,"</{}>",tag))
         })
     }
+    
     pub fn end(self)->fmt::Result{
         self.inner.end()
     }
@@ -168,15 +200,13 @@ impl<'a,T:Write,F: FnOnce(&mut T) -> fmt::Result> XML<'a,T,F>{
 
 
 pub fn json<'a,T:Write>(writer:&'a mut T)->Result<JSON<'a,T,impl FnOnce(&mut T)->fmt::Result+'a>,fmt::Error>{
+    write!(writer,"{{")?;
     Ok(
         JSON{
             inner:Element::new(
                     writer,
-                    move|w| {
-                        write!(w,"{{")
-                    },
                     move|w|write!(w,"}}")
-                    )?,
+                    ),
             atleast_one_attr:false
         }
     )
@@ -226,17 +256,18 @@ pub struct Element<'a, T, F> {
     func: Option<F>,
 }
 impl<'a, T: Write, F: FnOnce(&mut T) -> fmt::Result> Element<'a, T, F> {
+    pub fn get_writer(&mut self)->&mut T{
+        self.writer
+    }
     ///Write an element.
     pub fn new(
         writer: &'a mut T,
-        a: impl FnOnce(&mut T) -> fmt::Result,
         func: F,
-    ) -> Result<Element<'a, T, F>, fmt::Error> {
-        (a)(writer)?;
-        Ok(Element {
+    ) -> Element<'a, T, F> {
+        Element {
             writer,
             func: Some(func)
-        })
+        }
     }
 
     ///Write an element with no end tag.

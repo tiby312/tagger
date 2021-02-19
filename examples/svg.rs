@@ -28,9 +28,9 @@ fn main() -> core::fmt::Result {
             w.attr("rx",i)?;
         }
 
-        w
-        .attr("width",width)?
+        w.attr("width",width)?
         .attr("height",height)?;
+
 
         w.attr("rx",20)?
         .attr("ry",20)?
