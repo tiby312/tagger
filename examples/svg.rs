@@ -2,6 +2,7 @@ use tagger::prelude::*;
 
 
 
+
 fn main() -> core::fmt::Result {
     let mut io = tagger::upgrade(std::io::stdout());
     let width = 100.0;
@@ -22,33 +23,18 @@ fn main() -> core::fmt::Result {
     style.inner_str(".test{fill:none;stroke:white;stroke-width:3}")?;
     style.end()?;
 
-    svg.single("rect",|w|{
-
-        for i in 0..10{
-            w.attr("rx",i)?;
-        }
-
+    svg.single("path",|w|{
+        w.attr("class",4)?;
+        
         w.attr("width",width)?
         .attr("height",height)?;
 
+        let mut p=w.path_data()?;
+        p.move_to([4.0,2.0])?.close()?.finish()?.attr("d",20)?;
 
-        w.attr("rx",20)?
-        .attr("ry",20)?
-        .attr("style","fill:blue;")
+        Ok(w)
     })?;
 
-    /*
-    svg.single("path",|w|
-        .attr("class","poloto")?
-        .path()?
-        .move_to(5,2)?
-        .move_to(6,3)?
-        .move_to(3,3)?
-        .close()?
-        .end_path()?
-        .attr("style","chicken")
-    )?;
-    */
 
     let mut g=svg.elem("g",|w|w.attr("class","test"))?;
 

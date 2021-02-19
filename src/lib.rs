@@ -48,35 +48,78 @@ macro_rules! wrstr {
     }
 }
 
-/*
-#[repr(transparent)]
-pub struct PathBuilder<T>{
-    inner:T
+pub struct PolyLineBuilder<'a,'b,T>{
+    inner:&'a mut AttrBuilder<'b,T>
 }
-*/
+impl<'a,'b,T:Write> PolyLineBuilder<'a,'b,T>{
+    pub fn new(inner:&'a mut AttrBuilder<'b,T>)->Result<Self,fmt::Error>{
+        write!(inner.inner,"points=\"")?;
+        Ok(
+            PolyLineBuilder{
+                inner
+            }
+        )
+    }
+    pub fn point(&mut self,point:[f32;2])->Result<&mut Self,fmt::Error>{
+        write!(self.inner.inner, "{},{} ", point[0], point[1])?;
+        Ok(self)
+    }
+    pub fn finish(&'a mut self)->Result<&'a mut AttrBuilder<'b,T>,fmt::Error>{
+        write!(self.inner.inner,"\"")?;
+        Ok(self.inner)
+    }
 
+}
+
+pub struct PathBuilder<'a,'b,T>{
+    inner:&'a mut AttrBuilder<'b,T>
+}
+impl<'a,'b,T:Write> PathBuilder<'a,'b,T>{
+    pub fn new(inner:&'a mut AttrBuilder<'b,T>)->Result<Self,fmt::Error>{
+        write!(inner.inner,"d=\"")?;
+        Ok(PathBuilder{
+            inner
+        })
+    }
+    pub fn move_to(&mut self,point:[f32;2])->Result<&mut Self,fmt::Error>{
+        write!(self.inner.inner, "M {} {} ", point[0], point[1])?;
+        Ok(self)
+    }
+    pub fn line_to(&mut self,point:[f32;2])->Result<&mut Self,fmt::Error>{
+        write!(self.inner.inner, "L {} {} ", point[0], point[1])?;
+        Ok(self)
+    }
+    pub fn close(&mut self)->Result<&mut Self,fmt::Error>{
+        write!(self.inner.inner, "z")?;
+        Ok(self)
+    }
+    pub fn finish(&'a mut self)->Result<&'a mut AttrBuilder<'b,T>,fmt::Error>{
+        write!(self.inner.inner,"\"")?;
+        Ok(self.inner)
+    }
+}
 
 #[repr(transparent)]
 pub struct AttrBuilder<'a,T>{
     inner:&'a mut T
 }
 impl<'a,T:Write> AttrBuilder<'a,T>{
-    /*
-    pub fn with_tag(inner:&'a mut T,tag:&str)->Result<&'a mut AttrBuilder<T>,fmt::Error>{
-        write!(inner,"<{}",tag)?;
-        Ok(AttrBuilder::new(inner))
-    }
-    */
+    
     pub fn new(inner:&'a mut T)->AttrBuilder<'a,T>{
         AttrBuilder{
             inner
         }
     }
-/*
-    pub fn path(&mut self)->&mut PathBuilder<T>{
-        unsafe{&mut *(inner as *mut _ as *mut _)}
+
+
+    pub fn polyline_data<'b>(&'b mut self)->Result<PolyLineBuilder<'b,'a,T>,fmt::Error>{
+        PolyLineBuilder::new(self)
     }
-*/
+
+    pub fn path_data<'b>(&'b mut self)->Result<PathBuilder<'b,'a,T>,fmt::Error>{
+        PathBuilder::new(self)
+    }
+
     pub fn with_attr(&mut self,s:&str,func:impl FnOnce(&mut T)->core::fmt::Result)->Result<&mut Self,core::fmt::Error>{
         write!(self.inner," {}=",s)?;
         write!(self.inner,"\"")?;
@@ -193,7 +236,8 @@ impl<'a,T:Write,F: FnOnce(&mut T) -> fmt::Result> XML<'a,T,F>{
         })
     }
     
-    pub fn end(self)->fmt::Result{
+    pub fn end(self)->Result<(),fmt::Error>{
+        
         self.inner.end()
     }
 }
