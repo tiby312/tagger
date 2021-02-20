@@ -13,27 +13,36 @@ impl<'a, T: Write> AttrBuilder<'a, T> {
         AttrBuilder { inner }
     }
 
-    pub fn polyline_data<'b,F>(&'b mut self,func:F ) -> Result<&'b mut AttrBuilder<'a,T>, fmt::Error> 
-        where for<'x,'y> F:FnOnce(&'x mut PolyLineBuilder<'y,'a,T>)->Result<&'x mut PolyLineBuilder<'y, 'a, T>, fmt::Error>{
+    pub fn polyline_data<'b, F>(
+        &'b mut self,
+        func: F,
+    ) -> Result<&'b mut AttrBuilder<'a, T>, fmt::Error>
+    where
+        for<'x, 'y> F: FnOnce(
+            &'x mut PolyLineBuilder<'y, 'a, T>,
+        ) -> Result<&'x mut PolyLineBuilder<'y, 'a, T>, fmt::Error>,
+    {
         {
-            let mut p=PolyLineBuilder::new(self)?;
+            let mut p = PolyLineBuilder::new(self)?;
             func(&mut p)?;
             p.finish()?;
         }
         Ok(self)
     }
 
-
-    pub fn path_data<'b,F>(&'b mut self,func:F ) -> Result<&'b mut AttrBuilder<'a,T>, fmt::Error> 
-        where for<'x,'y> F:FnOnce(&'x mut PathBuilder<'y,'a,T>)->Result<&'x mut PathBuilder<'y, 'a, T>, fmt::Error>{
+    pub fn path_data<'b, F>(&'b mut self, func: F) -> Result<&'b mut AttrBuilder<'a, T>, fmt::Error>
+    where
+        for<'x, 'y> F: FnOnce(
+            &'x mut PathBuilder<'y, 'a, T>,
+        ) -> Result<&'x mut PathBuilder<'y, 'a, T>, fmt::Error>,
+    {
         {
-            let mut p=PathBuilder::new(self)?;
+            let mut p = PathBuilder::new(self)?;
             func(&mut p)?;
             p.finish()?;
         }
         Ok(self)
     }
-
 
     pub fn with_attr(
         &mut self,

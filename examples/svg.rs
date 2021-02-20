@@ -17,7 +17,6 @@ fn main() -> core::fmt::Result {
         })?;
 
         svg.defer_end(|svg| {
-
             //Draw a blue background
             svg.single("rect", |w| {
                 w.attr("x1", 0)?
@@ -30,17 +29,16 @@ fn main() -> core::fmt::Result {
             })?;
 
             //Add styling for test class.
-            svg.elem_no_attr("style")?.defer_end(|style|{
+            svg.elem_no_attr("style")?.defer_end(|style| {
                 style.inner_str(".test{fill:none;stroke:white;stroke-width:3}")
             })?;
-            
 
             //Draw a poly line
             svg.single("polyline", |w| {
-                w.attr("style","fill:none;stroke:red")?;
-                w.polyline_data(|p|{
-                    for i in 0..100{
-                        p.add_point([i as f32,(((i as f32)*10.0/100.0).sin()+1.0) *25.0])?;
+                w.attr("style", "fill:none;stroke:red")?;
+                w.polyline_data(|p| {
+                    for i in 0..100 {
+                        p.add_point([i as f32, (((i as f32) * 10.0 / 100.0).sin() + 1.0) * 25.0])?;
                     }
 
                     Ok(p)
@@ -49,11 +47,11 @@ fn main() -> core::fmt::Result {
 
             //Draw a path
             svg.single("path", |w| {
-                w.attr("style","fill:none;stroke:green")?;
-                w.path_data(|p|{
+                w.attr("style", "fill:none;stroke:green")?;
+                w.path_data(|p| {
                     p.move_to([50, 50])?;
-                    for i in 0..100{
-                        p.line_to([i as f32,(((i as f32)*10.0/100.0).cos()+1.0) *25.0])?;
+                    for i in 0..100 {
+                        p.line_to([i as f32, (((i as f32) * 10.0 / 100.0).cos() + 1.0) * 25.0])?;
                     }
                     p.close()
                 })

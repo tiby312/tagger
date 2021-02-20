@@ -14,10 +14,10 @@
 //!
 //!
 
-pub mod xml;
 pub mod json;
 pub mod raw;
-
+pub mod xml;
+pub mod xml2;
 
 ///The prelude to import the element manipulation convenience macros.
 pub mod prelude {
@@ -25,7 +25,6 @@ pub mod prelude {
     pub use super::wrstr;
     pub use core::fmt::Write;
 }
-
 
 use core::fmt;
 
@@ -48,6 +47,7 @@ macro_rules! wrstr {
         move |w| write!(w, "{}", $arg)
     };
 }
+
 
 ///Used by [`upgrade`]
 pub struct WriterAdaptor<T> {

@@ -9,7 +9,7 @@ fn main() -> core::fmt::Result {
 
     let mut html = root.elem_no_attr("html")?;
 
-    html.elem_no_attr("style")?.defer_end(|style|{
+    html.elem_no_attr("style")?.defer_end(|style| {
         style.inner_str(
             "table, th, td {
           border: 1px solid black;
@@ -19,10 +19,10 @@ fn main() -> core::fmt::Result {
         @keyframes mymove {
             from {background-color: red;}
             to {background-color: blue;}
-        }"
+        }",
         )
     })?;
-    
+
     let mut table = html.elem("table", |w| w.with_attr("style", wr!("width:{}%", 100)))?;
 
     for i in 0..20 {
