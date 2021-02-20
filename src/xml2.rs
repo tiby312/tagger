@@ -156,11 +156,11 @@ impl<T: fmt::Write> Element<T> {
         Ok(self)
     }
 
-    pub fn single<F>(&mut self,tags:[&str;3],func:F )->fmt::Result
+    pub fn single<F>(&mut self,tag:&str,tags:[&str;2],func:F )->fmt::Result
     where
         for<'x, 'y> F:
             FnOnce(&'x mut AttrBuilder<'y, T>) -> Result<&'x mut AttrBuilder<'y, T>, fmt::Error>,{
-        let [start,tag,end]=tags;
+        let [start,end]=tags;
         write!(self.writer,"{}{}",start,tag)?;
         func(&mut AttrBuilder {
             inner: self,
