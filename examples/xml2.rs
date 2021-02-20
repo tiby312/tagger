@@ -1,4 +1,5 @@
 use std::fmt::Write;
+use tagger::xml2::AttrTrait;
 
 static COMMENT:[&'static str;3]=["<!--","","-->"];
 static XML_DECL:[&'static str;3]=["<?","xml","?>"];
