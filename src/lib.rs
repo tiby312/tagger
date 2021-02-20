@@ -1,5 +1,5 @@
-//! This crate provides primitives to build up a html/xml/svg document programatically,
-//! as opposed to a templating type engine.
+//! This crate provides primitives to build up a html/xml/svg document programatically.
+//! Instead of using a templating engine, write data/markup that 'looks like' rust.
 //!
 //! ### Why do I have to call `end()`?
 //!
