@@ -1,48 +1,44 @@
 use tagger::prelude::*;
-
+use tagger::xml::tag_types;
 fn main() -> core::fmt::Result {
-    let mut io = tagger::upgrade(std::io::stdout());
+    let mut root = tagger::xml::Element::new(tagger::upgrade(std::io::stdout()));
 
-    let mut root = tagger::xml::xml(&mut io)?;
+    root.single_ext("DOCTYPE", tag_types::DECL, |a| {
+        write!(a, "html")?;
+        a.ok()
+    })?;
 
-    root.declaration("DOCTYPE", wr!("html"))?;
-
-    let mut html = root.elem_no_attr("html")?;
-
-    html.elem_no_attr("style")?.defer_end(|style| {
-        style.inner_str(
+    root.elem_no_attr("style", |style| {
+        write!(
+            style,
+            "{}",
             "table, th, td {
-          border: 1px solid black;
-          border-collapse: collapse;
-          animation: mymove 5s infinite;
-        }
-        @keyframes mymove {
-            from {background-color: red;}
-            to {background-color: blue;}
-        }",
+            border: 1px solid black;
+            border-collapse: collapse;
+            animation: mymove 5s infinite;
+          }
+          @keyframes mymove {
+              from {background-color: red;}
+              to {background-color: blue;}
+          }"
         )
     })?;
 
-    let mut table = html.elem("table", |w| w.with_attr("style", wr!("width:{}%", 100)))?;
+    root.elem("table", |builder| {
+        let table = builder.build(|w| w.with_attr("style", wr!("width:{}%", 100)))?;
 
-    for i in 0..20 {
-        let mut tr = table.elem_no_attr("tr")?;
+        for i in 0..20 {
+            table.elem("tr", |builder| {
+                let tr = builder.build(|e| e.ok())?;
 
-        tr.elem_no_attr("th")?
-            .move_inner(wr!("Hay {}:1", i))?
-            .end()?;
-        tr.elem_no_attr("th")?
-            .move_inner(wr!("Hay {}:2", i))?
-            .end()?;
-        tr.elem_no_attr("th")?
-            .move_inner(wr!("Hay {}:3", i))?
-            .end()?;
+                tr.elem_no_attr("th", |tr| write!(tr, "Hay {}:1", i))?;
+                tr.elem_no_attr("th", |tr| write!(tr, "Hay {}:2", i))?;
+                tr.elem_no_attr("th", |tr| write!(tr, "Hay {}:3", i))?;
 
-        tr.end()?;
-    }
+                tr.ok()
+            })?;
+        }
 
-    table.end()?;
-    html.end()?;
-    root.end()?;
-    Ok(())
+        table.ok()
+    })
 }
