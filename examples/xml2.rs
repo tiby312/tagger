@@ -17,17 +17,27 @@ fn main() -> core::fmt::Result {
     let mut v:Vec<[f32;2]>=Vec::new();
 
     root.elem2("svg",|builder|{
+        let svg=builder.build(|a|{
+            a.attr("chicken","but")?.polyline_data(|p|{
+                for a in v.iter(){
+                    p.add_point(*a)?;
+                }
+                Ok(p)
+            })
+        })?;
+
+        /*
         let svg=builder.attr("chicken","but")?.polyline_data(|p|{
             for a in v.iter(){
                 p.add_point(*a)?;
             }
             Ok(p)
         })?.finish()?;
-
+        */
         println!("{:?}",v);
 
         svg.elem2("div",|builder|{
-            builder.finish()
+            builder.build(|a|Ok(a))
         })?;
         
 

@@ -48,37 +48,37 @@ impl<'a, T: Write> PathBuilder<'a, T> {
 }
 
 
-pub struct AttrBuilder2<'a,T>(AttrBuilder<'a,T>);
 
-impl<'a,T:Write> AttrTrait for AttrBuilder2<'a,T>{}
-impl<'a,T:Write> fmt::Write for AttrBuilder2<'a,T>{
-    fn write_str(&mut self,s:&str)->fmt::Result{
-        self.0.write_str(s)
-    }
-}
+pub struct AttrBuilder2<'a,T>(&'a mut Element<T>);
+
 impl<'a,T:Write> AttrBuilder2<'a,T>{
-    
-    //TODO make 'a borrow!!!
-    pub fn finish(mut self)->Result<&'a mut Element<T>,fmt::Error>{
+
+    pub fn build<F>(self,func:F)->Result<&'a mut Element<T>,fmt::Error>
+    where for<'x,'y> F:FnOnce(&'x mut AttrBuilder<'y,T>)->Result<&'x mut AttrBuilder<'y,T>,fmt::Error>{
+        let _res=func(&mut AttrBuilder{
+            inner:self.0
+        });
+
         write!(self.0,">")?;
-        Ok(self.0.inner)
+        Ok(self.0)
     }
 }
+
 
 
 pub trait AttrTrait:Write+Sized{
     
-    fn polyline_data<F>(
-        mut self,
+    fn polyline_data<'b, F>(
+        &'b mut self,
         func: F,
-    ) -> Result<Self, fmt::Error>
+    ) -> Result<&'b mut Self, fmt::Error>
     where
         for<'x, 'y> F: FnOnce(
             &'x mut PolyLineBuilder<'y, Self>,
         ) -> Result<&'x mut PolyLineBuilder<'y, Self>, fmt::Error>,
     {
         {
-            let mut p = PolyLineBuilder::new(&mut self)?;
+            let mut p = PolyLineBuilder::new(self)?;
             func(&mut p)?;
             p.finish()?;
         }
@@ -86,14 +86,14 @@ pub trait AttrTrait:Write+Sized{
     }
 
 
-    fn path_data<F>(mut self, func: F) -> Result<Self, fmt::Error>
+    fn path_data<'b, F>(&'b mut self, func: F) -> Result<&'b mut Self, fmt::Error>
     where
         for<'x, 'y> F: FnOnce(
             &'x mut PathBuilder<'y, Self>,
         ) -> Result<&'x mut PathBuilder<'y, Self>, fmt::Error>,
     {
         {
-            let mut p = PathBuilder::new(&mut self)?;
+            let mut p = PathBuilder::new(self)?;
             func(&mut p)?;
             p.finish()?;
         }
@@ -101,21 +101,21 @@ pub trait AttrTrait:Write+Sized{
     }
 
     fn with_attr(
-        mut self,
+        &mut self,
         s: &str,
         func: impl FnOnce(&mut Self) -> core::fmt::Result,
-    ) -> Result<Self, core::fmt::Error> {
+    ) -> Result<&mut Self, core::fmt::Error> {
         write!(self, " {}=", s)?;
         write!(self, "\"")?;
-        func(&mut self)?;
+        func(self)?;
         write!(self, "\"")?;
         Ok(self)
     }
     fn attr(
-        mut self,
+        &mut self,
         s: &str,
         val: impl core::fmt::Display,
-    ) -> Result<Self, core::fmt::Error> {
+    ) -> Result<&mut Self, core::fmt::Error> {
         write!(self, " {}=\"{}\"", s, val)?;
         Ok(self)
     }
@@ -159,10 +159,10 @@ impl<T: fmt::Write> Element<T> {
     pub fn single<F>(&mut self,tags:[&str;3],func:F )->fmt::Result
     where
         for<'x, 'y> F:
-            FnOnce(AttrBuilder<'y, T>) -> Result< AttrBuilder<'y, T>, fmt::Error>,{
+            FnOnce(&'x mut AttrBuilder<'y, T>) -> Result<&'x mut AttrBuilder<'y, T>, fmt::Error>,{
         let [start,tag,end]=tags;
         write!(self.writer,"{}{}",start,tag)?;
-        func(AttrBuilder {
+        func(&mut AttrBuilder {
             inner: self,
         })?;
         write!(self.writer,"{}",end)
@@ -176,9 +176,7 @@ impl<T: fmt::Write> Element<T> {
         where for<'x> F:FnOnce(AttrBuilder2<'x,T>)->Result<&'x mut Element<T>,fmt::Error>{
             
             write!(self.writer, "<{} ", tag)?;
-            let attr=AttrBuilder2(AttrBuilder{
-                inner: self,
-            });
+            let attr=AttrBuilder2(self);
 
             //write!(self.writer, ">")?;
         
