@@ -75,7 +75,6 @@ pub struct ElementHeaderWriter<'a, T>(&'a mut Element<T>);
 
 impl<'a, T: Write> ElementHeaderWriter<'a, T> {
     /// Write out the attributes for an element with an ending tag.
-    #[must_use]
     pub fn write<F>(
         self,
         func: F,
