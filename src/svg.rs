@@ -1,58 +1,49 @@
+//!
+//! svg related building blocks
+//!
 use super::*;
-
-pub struct PathCommander<'a, 'b> {
-    writer: &'a mut fmt::Formatter<'b>,
+/// Create the attribute for a svg polyline. Used by [`WriteAttr::polyline_data`].
+pub struct PolyLineBuilder<'a, T: Write> {
+    inner: &'a mut T,
 }
-
-impl<'a, 'b> PathCommander<'a, 'b> {
-    pub fn close(&mut self) -> fmt::Result {
-        write!(self.writer, "z")
+impl<'a, T: Write> PolyLineBuilder<'a, T> {
+    pub(super) fn new(inner: &'a mut T) -> Result<Self, fmt::Error> {
+        write!(inner, " points=\"")?;
+        Ok(PolyLineBuilder { inner })
     }
-    pub fn move_to(&mut self, point: [f32; 2]) -> Result<&mut Self, fmt::Error> {
-        write!(self.writer, "M {} {} ", point[0], point[1])?;
+    pub fn add_point(&mut self, point: [impl fmt::Display; 2]) -> Result<&mut Self, fmt::Error> {
+        write!(self.inner, "{},{} ", point[0], point[1])?;
         Ok(self)
     }
-    pub fn line_to(&mut self, point: [f32; 2]) -> Result<&mut Self, fmt::Error> {
-        write!(self.writer, "L {} {} ", point[0], point[1])?;
+    pub(super) fn finish(&'a mut self) -> Result<&'a mut T, fmt::Error> {
+        write!(self.inner, "\"")?;
+        Ok(self.inner)
+    }
+}
+
+/// Create the attribute for a svg path. Used by [`WriteAttr::path_data`]
+pub struct PathBuilder<'a, T> {
+    inner: &'a mut T,
+}
+impl<'a, T: Write> PathBuilder<'a, T> {
+    pub(super) fn new(inner: &'a mut T) -> Result<Self, fmt::Error> {
+        write!(inner, " d=\"")?;
+        Ok(PathBuilder { inner })
+    }
+    pub fn move_to(&mut self, point: [impl fmt::Display; 2]) -> Result<&mut Self, fmt::Error> {
+        write!(self.inner, "M {} {} ", point[0], point[1])?;
         Ok(self)
     }
-}
-
-pub fn path(func: impl FnOnce(PathCommander) -> fmt::Result) -> impl fmt::Display {
-    struct Path<F: FnOnce(PathCommander) -> fmt::Result> {
-        it: std::cell::RefCell<Option<F>>,
+    pub fn line_to(&mut self, point: [impl fmt::Display; 2]) -> Result<&mut Self, fmt::Error> {
+        write!(self.inner, "L {} {} ", point[0], point[1])?;
+        Ok(self)
     }
-    impl<F: FnOnce(PathCommander) -> fmt::Result> fmt::Display for Path<F> {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            let comm = PathCommander { writer: f };
-            (self.it.borrow_mut().take().unwrap())(comm)?;
-            Ok(())
-        }
+    pub fn close(&mut self) -> Result<&mut Self, fmt::Error> {
+        write!(self.inner, "z")?;
+        Ok(self)
     }
-
-    Path {
-        it: std::cell::RefCell::new(Some(func)),
+    pub(super) fn finish(&'a mut self) -> Result<&'a mut T, fmt::Error> {
+        write!(self.inner, "\"")?;
+        Ok(self.inner)
     }
-}
-
-pub fn poly(a: impl ExactSizeIterator<Item = [f32; 2]>) -> impl fmt::Display {
-    struct PolyLine<I> {
-        it: std::cell::RefCell<I>,
-    }
-    impl<I: Iterator<Item = [f32; 2]>> PolyLine<I> {
-        fn new(it: I) -> PolyLine<I> {
-            PolyLine {
-                it: std::cell::RefCell::new(it),
-            }
-        }
-    }
-    impl<I: Iterator<Item = [f32; 2]>> fmt::Display for PolyLine<I> {
-        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-            for [x, y] in &mut *self.it.borrow_mut() {
-                write!(f, "{},{} ", x, y)?
-            }
-            Ok(())
-        }
-    }
-    PolyLine::new(a)
 }

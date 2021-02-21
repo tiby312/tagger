@@ -1,38 +1,44 @@
 use tagger::prelude::*;
-
+use tagger::tag_types;
 fn main() -> core::fmt::Result {
-    let mut io = tagger::upgrade(std::io::stdout());
+    let mut root = tagger::Element::new(tagger::upgrade(std::io::stdout()));
 
-    tagger::single(&mut io, wr!("<!DOCTYPE html>"))?;
-    let mut html = tagger::elem(&mut io, wr!("<html>"), wr!("</html>"))?;
+    root.single_ext("DOCTYPE", tag_types::DECL, |a| {
+        write!(a, "html")?;
+        Ok(a)
+    })?;
 
-    html.single(wr!(
-        "<style>{}</style>",
-        "table, th, td {
-      border: 1px solid black;
-      border-collapse: collapse;
-      animation: mymove 5s infinite;
-    }
-    @keyframes mymove {
-        from {background-color: red;}
-        to {background-color: blue;}
-    }"
-    ))?;
+    root.elem_no_attr("style", |style| {
+        write!(
+            style,
+            "{}",
+            "table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            animation: mymove 5s infinite;
+          }
+          @keyframes mymove {
+              from {background-color: red;}
+              to {background-color: blue;}
+          }"
+        )
+    })?;
 
-    let mut table = html.elem(wr!("<table style='width:{}%'>", 100), wr!("</table>"))?;
+    root.elem("table", |builder| {
+        let (table, cert) = builder.build(|w| w.with_attr("style", wr!("width:{}%", 100)))?;
 
-    for i in 0..20 {
-        let mut tr = table.elem(wr!("<tr>"), wr!("</tr>"))?;
+        for i in 0..20 {
+            table.elem("tr", |builder| {
+                let (tr, cert) = builder.build(|e| Ok(e))?;
 
-        tr.single(wr!("<th>Hay {}:1</th>", i))?;
-        tr.single(wr!("<th>Hay {}:2</th>", i))?;
-        tr.single(wr!("<th>Hay {}:3</th>", i))?;
+                tr.elem_no_attr("th", |tr| write!(tr, "Hay {}:1", i))?;
+                tr.elem_no_attr("th", |tr| write!(tr, "Hay {}:2", i))?;
+                tr.elem_no_attr("th", |tr| write!(tr, "Hay {}:3", i))?;
 
-        tr.end()?;
-    }
+                cert
+            })?;
+        }
 
-    table.end()?;
-    html.end()?;
-
-    Ok(())
+        cert
+    })
 }
