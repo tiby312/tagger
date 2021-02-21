@@ -8,15 +8,13 @@ Find it on [github](https://github.com/tiby312/tagger) and [crates.io](https://c
 ### Example
 
 ```rust
-
-
 use tagger::prelude::*;
 fn main() -> core::fmt::Result {
     let width = 100.0;
     let height = 100.0;
 
     let mut root = tagger::Element::new(tagger::upgrade(std::io::stdout()));
-   
+
     root.elem("svg", |header| {
         let svg = header.write(|b| {
             b.attr("xmlns", "http://www.w3.org/2000/svg")?
@@ -51,7 +49,6 @@ fn main() -> core::fmt::Result {
 
         Ok(svg)
     })?;
-
 
     Ok(())
 }

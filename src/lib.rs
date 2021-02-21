@@ -3,7 +3,7 @@
 //!
 //! ### Why so many closures?
 //!
-//! Unlike Drop, passing closures can be used to force the user to handle errors when 
+//! Unlike Drop, passing closures can be used to force the user to handle errors when
 //! something goes out of scope. If we put the writing of end tags in a Drop method
 //! it could silently fail, which is not ideal.
 //!
@@ -56,8 +56,6 @@ impl<T: std::io::Write> fmt::Write for WriterAdaptor<T> {
     }
 }
 
-
-
 ///Common tags to be used in [`Element::single_ext`]
 pub mod tag_types {
     /// Equivalent to `<{}/>`
@@ -75,25 +73,22 @@ pub struct ElementHeaderWriter<'a, T>(&'a mut Element<T>);
 
 impl<'a, T: Write> ElementHeaderWriter<'a, T> {
     /// Write out the attributes for an element with an ending tag.
-    pub fn write<F>(
-        self,
-        func: F,
-    ) -> Result<&'a mut Element<T>, fmt::Error>
+    pub fn write<F>(self, func: F) -> Result<&'a mut Element<T>, fmt::Error>
     where
-        for<'x, 'y> F:
-            FnOnce(&'x mut AttributeWriter<'y, T>) -> Result<&'x mut AttributeWriter<'y, T>, fmt::Error>,
+        for<'x, 'y> F: FnOnce(
+            &'x mut AttributeWriter<'y, T>,
+        ) -> Result<&'x mut AttributeWriter<'y, T>, fmt::Error>,
     {
         let _res = func(&mut AttributeWriter { inner: self.0 });
 
         write!(self.0, ">")?;
-        Ok(self.0,)
+        Ok(self.0)
     }
 }
 
 /// Functions the user can call to add attributes.
 /// [`AttributeWriter`] could have implemented these, but lets use a trait to simplify lifetimes.
 pub trait WriteAttr: Write + Sized {
-
     ///Write the data attribute for a svg polyline.
     fn polyline_data<F>(&mut self, func: F) -> Result<&mut Self, fmt::Error>
     where
@@ -171,7 +166,6 @@ impl<T: fmt::Write> fmt::Write for Element<T> {
     }
 }
 
-
 impl<T: fmt::Write> Element<T> {
     /// Create a new element.
     pub fn new(writer: T) -> Self {
@@ -180,10 +174,16 @@ impl<T: fmt::Write> Element<T> {
 
     /// Write a element that doesnt have an ending tag. i.e. it can only have attributes.
     /// Some common tag types are in [`tag_types`].
-    pub fn single_ext<F>(&mut self, tag: &str, tags: [&str; 2], func: F) -> Result<&mut Self,fmt::Error>
+    pub fn single_ext<F>(
+        &mut self,
+        tag: &str,
+        tags: [&str; 2],
+        func: F,
+    ) -> Result<&mut Self, fmt::Error>
     where
-        for<'x, 'y> F:
-            FnOnce(&'x mut AttributeWriter<'y, T>) -> Result<&'x mut AttributeWriter<'y, T>, fmt::Error>,
+        for<'x, 'y> F: FnOnce(
+            &'x mut AttributeWriter<'y, T>,
+        ) -> Result<&'x mut AttributeWriter<'y, T>, fmt::Error>,
     {
         let [start, end] = tags;
         write!(self.writer, "{}{} ", start, tag)?;
@@ -193,17 +193,18 @@ impl<T: fmt::Write> Element<T> {
     }
 
     /// Shorthand for [`Element::single_ext`] with [`tag_types::NORMAL`]
-    pub fn single<F>(&mut self, tag: &str, func: F) -> Result<&mut Self,fmt::Error>
+    pub fn single<F>(&mut self, tag: &str, func: F) -> Result<&mut Self, fmt::Error>
     where
-        for<'x, 'y> F:
-            FnOnce(&'x mut AttributeWriter<'y, T>) -> Result<&'x mut AttributeWriter<'y, T>, fmt::Error>,
+        for<'x, 'y> F: FnOnce(
+            &'x mut AttributeWriter<'y, T>,
+        ) -> Result<&'x mut AttributeWriter<'y, T>, fmt::Error>,
     {
         self.single_ext(tag, ["<", "/>"], func)?;
         Ok(self)
     }
 
     /// Shorthand for [`Element::elem`] with the attribute builder functionality omitted.
-    pub fn elem_no_attr<F>(&mut self, tag: &str, func: F) -> Result<&mut Self,fmt::Error>
+    pub fn elem_no_attr<F>(&mut self, tag: &str, func: F) -> Result<&mut Self, fmt::Error>
     where
         for<'x> F: FnOnce(&'x mut Element<T>) -> fmt::Result,
     {
@@ -216,8 +217,9 @@ impl<T: fmt::Write> Element<T> {
     /// Write a element that has an ending tag.
     /// The user is required to feed the element back into this function
     /// thus proving that they called [`ElementHeaderWriter::write`].
-    pub fn elem<F>(&mut self, tag: &str, func: F) -> Result<&mut Self,fmt::Error>
-    where F: FnOnce(ElementHeaderWriter<T>) -> Result<&mut Element<T>, fmt::Error>,
+    pub fn elem<F>(&mut self, tag: &str, func: F) -> Result<&mut Self, fmt::Error>
+    where
+        F: FnOnce(ElementHeaderWriter<T>) -> Result<&mut Element<T>, fmt::Error>,
     {
         write!(self.writer, "<{} ", tag)?;
         let attr = ElementHeaderWriter(self);
