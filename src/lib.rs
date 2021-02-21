@@ -75,11 +75,11 @@ pub struct ElementHeaderWriter<'a, T>(&'a mut Element<T>);
 
 impl<'a, T: Write> ElementHeaderWriter<'a, T> {
     /// Write out the attributes for an element with an ending tag.
-    /// Return a certificate to prove that this function was run.
+    #[must_use]
     pub fn write<F>(
         self,
         func: F,
-    ) -> Result<(&'a mut Element<T>, Result<HeaderWrittenCertificate, fmt::Error>), fmt::Error>
+    ) -> Result<&'a mut Element<T>, fmt::Error>
     where
         for<'x, 'y> F:
             FnOnce(&'x mut AttributeWriter<'y, T>) -> Result<&'x mut AttributeWriter<'y, T>, fmt::Error>,
@@ -87,7 +87,7 @@ impl<'a, T: Write> ElementHeaderWriter<'a, T> {
         let _res = func(&mut AttributeWriter { inner: self.0 });
 
         write!(self.0, ">")?;
-        Ok((self.0, Ok(HeaderWrittenCertificate(()))))
+        Ok(self.0,)
     }
 }
 
@@ -172,9 +172,6 @@ impl<T: fmt::Write> fmt::Write for Element<T> {
     }
 }
 
-///Struct indicating that the [`ElementHeaderWriter::write`] function was called.
-#[must_use]
-pub struct HeaderWrittenCertificate(());
 
 impl<T: fmt::Write> Element<T> {
     /// Create a new element.
@@ -184,7 +181,7 @@ impl<T: fmt::Write> Element<T> {
 
     /// Write a element that doesnt have an ending tag. i.e. it can only have attributes.
     /// Some common tag types are in [`tag_types`].
-    pub fn single_ext<F>(&mut self, tag: &str, tags: [&str; 2], func: F) -> fmt::Result
+    pub fn single_ext<F>(&mut self, tag: &str, tags: [&str; 2], func: F) -> Result<&mut Self,fmt::Error>
     where
         for<'x, 'y> F:
             FnOnce(&'x mut AttributeWriter<'y, T>) -> Result<&'x mut AttributeWriter<'y, T>, fmt::Error>,
@@ -192,37 +189,43 @@ impl<T: fmt::Write> Element<T> {
         let [start, end] = tags;
         write!(self.writer, "{}{} ", start, tag)?;
         func(&mut AttributeWriter { inner: self })?;
-        write!(self.writer, "{}", end)
+        write!(self.writer, "{}", end)?;
+        Ok(self)
     }
 
     /// Shorthand for [`Element::single_ext`] with [`tag_types::NORMAL`]
-    pub fn single<F>(&mut self, tag: &str, func: F) -> fmt::Result
+    pub fn single<F>(&mut self, tag: &str, func: F) -> Result<&mut Self,fmt::Error>
     where
         for<'x, 'y> F:
             FnOnce(&'x mut AttributeWriter<'y, T>) -> Result<&'x mut AttributeWriter<'y, T>, fmt::Error>,
     {
-        self.single_ext(tag, ["<", "/>"], func)
+        self.single_ext(tag, ["<", "/>"], func)?;
+        Ok(self)
     }
 
     /// Shorthand for [`Element::elem`] with the attribute builder functionality omitted.
-    pub fn elem_no_attr<F>(&mut self, tag: &str, func: F) -> fmt::Result
+    pub fn elem_no_attr<F>(&mut self, tag: &str, func: F) -> Result<&mut Self,fmt::Error>
     where
         for<'x> F: FnOnce(&'x mut Element<T>) -> fmt::Result,
     {
         write!(self.writer, "<{}>", tag)?;
         func(self)?;
-        write!(self.writer, "</{}>", tag)
+        write!(self.writer, "</{}>", tag)?;
+        Ok(self)
     }
 
     /// Write a element that has an ending tag.
-    pub fn elem<F>(&mut self, tag: &str, func: F) -> fmt::Result
-    where F: FnOnce(ElementHeaderWriter<T>) -> Result<HeaderWrittenCertificate, fmt::Error>,
+    /// The user is required to feed the element back into this function
+    /// thus proving that they called [`ElementHeaderWriter::write`].
+    pub fn elem<F>(&mut self, tag: &str, func: F) -> Result<&mut Self,fmt::Error>
+    where F: FnOnce(ElementHeaderWriter<T>) -> Result<&mut Element<T>, fmt::Error>,
     {
         write!(self.writer, "<{} ", tag)?;
         let attr = ElementHeaderWriter(self);
 
         let _cert = func(attr)?;
 
-        write!(self.writer, "</{}>", tag)
+        write!(self.writer, "</{}>", tag)?;
+        Ok(self)
     }
 }

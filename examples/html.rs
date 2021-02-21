@@ -25,20 +25,22 @@ fn main() -> core::fmt::Result {
     })?;
 
     root.elem("table", |header| {
-        let (table, cert) = header.write(|w| w.with_attr("style", wr!("width:{}%", 100)))?;
+        let table = header.write(|w| w.with_attr("style", wr!("width:{}%", 100)))?;
 
         for i in 0..20 {
             table.elem("tr", |header| {
-                let (tr, cert) = header.write(|e| Ok(e))?;
+                let tr = header.write(|e| Ok(e))?;
 
                 tr.elem_no_attr("th", |tr| write!(tr, "Hay {}:1", i))?;
                 tr.elem_no_attr("th", |tr| write!(tr, "Hay {}:2", i))?;
                 tr.elem_no_attr("th", |tr| write!(tr, "Hay {}:3", i))?;
 
-                cert
+                Ok(tr)
             })?;
         }
 
-        cert
-    })
+        Ok(table)
+    })?;
+
+    Ok(())
 }

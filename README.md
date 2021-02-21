@@ -9,6 +9,7 @@ Find it on [github](https://github.com/tiby312/tagger) and [crates.io](https://c
 
 ```rust
 
+
 use tagger::prelude::*;
 fn main() -> core::fmt::Result {
     let width = 100.0;
@@ -17,7 +18,7 @@ fn main() -> core::fmt::Result {
     let mut root = tagger::Element::new(tagger::upgrade(std::io::stdout()));
    
     root.elem("svg", |header| {
-        let (svg, cert) = header.write(|b| {
+        let svg = header.write(|b| {
             b.attr("xmlns", "http://www.w3.org/2000/svg")?
                 .with_attr("viewBox", wr!("0 0 {} {}", width, height))
         })?;
@@ -39,19 +40,21 @@ fn main() -> core::fmt::Result {
 
         //Draw some circles
         svg.elem("g", |header| {
-            let (g, cert) = header.write(|w| w.attr("class", "test"))?;
+            let g = header.write(|w| w.attr("class", "test"))?;
             for r in (0..50).step_by(10) {
                 g.single("circle", |w| {
                     w.attr("cx", 50.0)?.attr("cy", 50.0)?.attr("r", r)
                 })?;
             }
-            cert
+            Ok(g)
         })?;
 
-        cert
-    })
-}
+        Ok(svg)
+    })?;
 
+
+    Ok(())
+}
 
 ```
 
