@@ -1,5 +1,8 @@
+//!
+//! svg related building blocks
+//!
 use super::*;
-/// Create the attribute for a svg polyline. Used by [`AttrTrait::polyline_data`].
+/// Create the attribute for a svg polyline. Used by [`WriteAttr::polyline_data`].
 pub struct PolyLineBuilder<'a, T: Write> {
     inner: &'a mut T,
 }
@@ -18,7 +21,7 @@ impl<'a, T: Write> PolyLineBuilder<'a, T> {
     }
 }
 
-/// Create the attribute for a svg path. Used by [`AttrTrait::path_data`]
+/// Create the attribute for a svg path. Used by [`WriteAttr::path_data`]
 pub struct PathBuilder<'a, T> {
     inner: &'a mut T,
 }

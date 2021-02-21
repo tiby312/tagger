@@ -22,7 +22,7 @@ macro_rules! wr {
 ///The prelude to import the element manipulation convenience macros.
 pub mod prelude {
     pub use super::wr;
-    pub use super::AttrTrait;
+    pub use super::WriteAttr;
     pub use core::fmt::Write;
 }
 
@@ -70,28 +70,31 @@ pub mod tag_types {
 }
 
 /// Used by [`Element::elem`]
-pub struct ElemBuilder<'a, T>(&'a mut Element<T>);
+pub struct ElementHeaderWriter<'a, T>(&'a mut Element<T>);
 
-impl<'a, T: Write> ElemBuilder<'a, T> {
+impl<'a, T: Write> ElementHeaderWriter<'a, T> {
     /// Write out the attributes for an element with an ending tag.
-    /// Return a build certificate to prove that this build function was run.
-    pub fn build<F>(
+    /// Return a certificate to prove that this function was run.
+    pub fn write<F>(
         self,
         func: F,
-    ) -> Result<(&'a mut Element<T>, Result<BuildCertificate, fmt::Error>), fmt::Error>
+    ) -> Result<(&'a mut Element<T>, Result<HeaderWrittenCertificate, fmt::Error>), fmt::Error>
     where
         for<'x, 'y> F:
-            FnOnce(&'x mut AttrBuilder<'y, T>) -> Result<&'x mut AttrBuilder<'y, T>, fmt::Error>,
+            FnOnce(&'x mut AttributeWriter<'y, T>) -> Result<&'x mut AttributeWriter<'y, T>, fmt::Error>,
     {
-        let _res = func(&mut AttrBuilder { inner: self.0 });
+        let _res = func(&mut AttributeWriter { inner: self.0 });
 
         write!(self.0, ">")?;
-        Ok((self.0, Ok(BuildCertificate(()))))
+        Ok((self.0, Ok(HeaderWrittenCertificate(()))))
     }
 }
 
-///Use a trait to simplify lifetimes
-pub trait AttrTrait: Write + Sized {
+/// Functions the user can call to add attributes.
+/// [`AttributeWriter`] could have implemented these, but lets use a trait to simplify lifetimes.
+pub trait WriteAttr: Write + Sized {
+
+    ///Write the data attribute for a svg polyline.
     fn polyline_data<'b, F>(&'b mut self, func: F) -> Result<&'b mut Self, fmt::Error>
     where
         for<'x, 'y> F: FnOnce(
@@ -106,6 +109,7 @@ pub trait AttrTrait: Write + Sized {
         Ok(self)
     }
 
+    ///Write the data attribute for a svg path.
     fn path_data<'b, F>(&'b mut self, func: F) -> Result<&'b mut Self, fmt::Error>
     where
         for<'x, 'y> F: FnOnce(
@@ -120,6 +124,7 @@ pub trait AttrTrait: Write + Sized {
         Ok(self)
     }
 
+    ///Write an attribute where the user can write the value part using [`wr`] macro or the [`write`] macro
     fn with_attr(
         &mut self,
         s: &str,
@@ -131,6 +136,8 @@ pub trait AttrTrait: Write + Sized {
         write!(self, "\" ")?;
         Ok(self)
     }
+
+    ///Write an attribute with the specified tag and value using the values [`fmt::Display`] trait.
     fn attr(
         &mut self,
         s: &str,
@@ -141,17 +148,19 @@ pub trait AttrTrait: Write + Sized {
     }
 }
 
-pub struct AttrBuilder<'a, T> {
+///Builder to write out attributes to an element.
+pub struct AttributeWriter<'a, T> {
     inner: &'a mut Element<T>,
 }
 
-impl<'a, T: fmt::Write> fmt::Write for AttrBuilder<'a, T> {
+impl<'a, T: fmt::Write> fmt::Write for AttributeWriter<'a, T> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         self.inner.write_str(s)
     }
 }
-impl<'a, T: fmt::Write> AttrTrait for AttrBuilder<'a, T> {}
+impl<'a, T: fmt::Write> WriteAttr for AttributeWriter<'a, T> {}
 
+///An element.
 pub struct Element<T> {
     writer: T,
 }
@@ -162,9 +171,9 @@ impl<T: fmt::Write> fmt::Write for Element<T> {
     }
 }
 
-//Struct indicating that the build function was called.
+///Struct indicating that the [`ElementHeaderWriter::write`] function was called.
 #[must_use]
-pub struct BuildCertificate(());
+pub struct HeaderWrittenCertificate(());
 
 impl<T: fmt::Write> Element<T> {
     /// Create a new element.
@@ -177,11 +186,11 @@ impl<T: fmt::Write> Element<T> {
     pub fn single_ext<F>(&mut self, tag: &str, tags: [&str; 2], func: F) -> fmt::Result
     where
         for<'x, 'y> F:
-            FnOnce(&'x mut AttrBuilder<'y, T>) -> Result<&'x mut AttrBuilder<'y, T>, fmt::Error>,
+            FnOnce(&'x mut AttributeWriter<'y, T>) -> Result<&'x mut AttributeWriter<'y, T>, fmt::Error>,
     {
         let [start, end] = tags;
         write!(self.writer, "{}{} ", start, tag)?;
-        func(&mut AttrBuilder { inner: self })?;
+        func(&mut AttributeWriter { inner: self })?;
         write!(self.writer, "{}", end)
     }
 
@@ -189,7 +198,7 @@ impl<T: fmt::Write> Element<T> {
     pub fn single<F>(&mut self, tag: &str, func: F) -> fmt::Result
     where
         for<'x, 'y> F:
-            FnOnce(&'x mut AttrBuilder<'y, T>) -> Result<&'x mut AttrBuilder<'y, T>, fmt::Error>,
+            FnOnce(&'x mut AttributeWriter<'y, T>) -> Result<&'x mut AttributeWriter<'y, T>, fmt::Error>,
     {
         self.single_ext(tag, ["<", "/>"], func)
     }
@@ -206,10 +215,10 @@ impl<T: fmt::Write> Element<T> {
 
     /// Write a element that has an ending tag.
     pub fn elem<F>(&mut self, tag: &str, func: F) -> fmt::Result
-    where F: FnOnce(ElemBuilder<T>) -> Result<BuildCertificate, fmt::Error>,
+    where F: FnOnce(ElementHeaderWriter<T>) -> Result<HeaderWrittenCertificate, fmt::Error>,
     {
         write!(self.writer, "<{} ", tag)?;
-        let attr = ElemBuilder(self);
+        let attr = ElementHeaderWriter(self);
 
         let _cert = func(attr)?;
 
