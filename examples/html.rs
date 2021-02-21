@@ -3,9 +3,7 @@ use tagger::tag_types;
 fn main() -> core::fmt::Result {
     let mut root = tagger::Element::new(tagger::upgrade(std::io::stdout()));
 
-    root.single_ext("DOCTYPE", tag_types::DECL, |a| {
-        write_ret!(a, "html")
-    })?;
+    root.single_ext("DOCTYPE", tag_types::DECL, |a| write_ret!(a, "html"))?;
 
     root.elem_no_attr("style", |style| {
         write_ret!(
@@ -27,10 +25,19 @@ fn main() -> core::fmt::Result {
         let table = header.write(|w| w.with_attr("style", wr!("width:{}%", 100)))?;
 
         for i in 0..20 {
-            table.elem_no_attr("tr", |tr|{
-                tr.elem_no_attr("th", |tr| {write!(tr, "Hay {}:1", i)?;Ok(tr)})?;
-                tr.elem_no_attr("th", |tr| {write!(tr, "Hay {}:2", i)?;Ok(tr)})?;
-                tr.elem_no_attr("th", |tr| {write!(tr, "Hay {}:3", i)?;Ok(tr)})
+            table.elem_no_attr("tr", |tr| {
+                tr.elem_no_attr("th", |tr| {
+                    write!(tr, "Hay {}:1", i)?;
+                    Ok(tr)
+                })?;
+                tr.elem_no_attr("th", |tr| {
+                    write!(tr, "Hay {}:2", i)?;
+                    Ok(tr)
+                })?;
+                tr.elem_no_attr("th", |tr| {
+                    write!(tr, "Hay {}:3", i)?;
+                    Ok(tr)
+                })
             })?;
         }
 

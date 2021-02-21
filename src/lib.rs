@@ -31,12 +31,14 @@ macro_rules! wr {
     }
 }
 
-/// [`fmt::Write::write_fmt`] doesn't return itself on success. This version does. 
-pub fn write_fmt_ret<'a,T:fmt::Write>(w:&'a mut T,args:fmt::Arguments)->Result<&'a mut T,fmt::Error>{
+/// [`fmt::Write::write_fmt`] doesn't return itself on success. This version does.
+pub fn write_fmt_ret<'a, T: fmt::Write>(
+    w: &'a mut T,
+    args: fmt::Arguments,
+) -> Result<&'a mut T, fmt::Error> {
     w.write_fmt(args)?;
     Ok(w)
 }
-
 
 /// Just like the regular [`write!()`] macro except it returns itself upon success.
 #[macro_export]
@@ -46,8 +48,8 @@ macro_rules! write_ret {
 
 ///The prelude to import the element manipulation convenience macros.
 pub mod prelude {
-    pub use super::write_ret;
     pub use super::wr;
+    pub use super::write_ret;
     pub use super::WriteAttr;
     pub use core::fmt::Write;
 }
@@ -115,7 +117,6 @@ impl<'a, T: Write> ElementHeaderWriter<'a, T> {
 /// Functions the user can call to add attributes.
 /// [`AttributeWriter`] could have implemented these, but lets use a trait to simplify lifetimes.
 pub trait WriteAttr: Write + Sized {
-
     ///Write the data attribute for a svg polyline.
     fn polyline_data<F>(&mut self, func: F) -> Result<&mut Self, fmt::Error>
     where
@@ -172,11 +173,10 @@ pub trait WriteAttr: Write + Sized {
 
 ///Builder to write out attributes to an element.
 pub struct AttributeWriter<'a, T> {
-    inner: &'a mut Element<T>
+    inner: &'a mut Element<T>,
 }
 
 impl<'a, T: fmt::Write> fmt::Write for AttributeWriter<'a, T> {
-    
     fn write_str(&mut self, s: &str) -> fmt::Result {
         self.inner.write_str(s)
     }
@@ -234,7 +234,7 @@ impl<T: fmt::Write> Element<T> {
     /// Shorthand for [`Element::elem`] with the attribute builder functionality omitted.
     pub fn elem_no_attr<F>(&mut self, tag: &str, func: F) -> Result<&mut Self, fmt::Error>
     where
-        for<'x> F: FnOnce(&'x mut Element<T>) -> Result<&'x mut Element<T>,fmt::Error>,
+        for<'x> F: FnOnce(&'x mut Element<T>) -> Result<&'x mut Element<T>, fmt::Error>,
     {
         write!(self.writer, "<{}>", tag)?;
         let _ = func(self)?;
