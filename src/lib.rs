@@ -5,7 +5,10 @@
 //!
 //! Unlike Drop, passing closures can be used to force the user to handle errors when
 //! something goes out of scope. If we put the writing of end tags in a Drop method
-//! it could silently fail, which is not ideal.
+//! it could silently fail, which is not ideal. This can be worked around by adding
+//! an explicit function to write the end tag, but there is no way to guarantee
+//! that this function gets called at compile time. The best you can do is a runtime
+//! panic. With closures, you can force a compile-time error.
 //!
 
 pub mod svg;
