@@ -8,7 +8,14 @@
 //! it could silently fail, which is not ideal. This can be worked around by adding
 //! an explicit function to write the end tag, but there is no way to guarantee
 //! that this function gets called at compile time. The best you can do is a runtime
-//! panic. With closures, you can force a compile-time error.
+//! panic if the finalizer function isn't called in order to handler the error case.
+//! With closures, you can force a compile-time error.
+//!
+//! ### Examples
+//!
+//! See it in use in the [poloto crate](https://crates.io/crates/poloto).
+//! Also check out the examples at [github](https://github.com/tiby312/tagger/tree/master/examples).
+//!
 //!
 
 pub mod svg;
@@ -108,6 +115,7 @@ impl<'a, T: Write> ElementHeaderWriter<'a, T> {
 /// Functions the user can call to add attributes.
 /// [`AttributeWriter`] could have implemented these, but lets use a trait to simplify lifetimes.
 pub trait WriteAttr: Write + Sized {
+
     ///Write the data attribute for a svg polyline.
     fn polyline_data<F>(&mut self, func: F) -> Result<&mut Self, fmt::Error>
     where
@@ -144,10 +152,10 @@ pub trait WriteAttr: Write + Sized {
         s: &str,
         func: impl FnOnce(&mut Self) -> core::fmt::Result,
     ) -> Result<&mut Self, core::fmt::Error> {
-        write!(self, "{}=", s)?;
+        write!(self, " {}=", s)?;
         write!(self, "\"")?;
         func(self)?;
-        write!(self, "\" ")?;
+        write!(self, "\"")?;
         Ok(self)
     }
 
@@ -157,17 +165,18 @@ pub trait WriteAttr: Write + Sized {
         s: &str,
         val: impl core::fmt::Display,
     ) -> Result<&mut Self, core::fmt::Error> {
-        write!(self, "{}=\"{}\" ", s, val)?;
+        write!(self, " {}=\"{}\"", s, val)?;
         Ok(self)
     }
 }
 
 ///Builder to write out attributes to an element.
 pub struct AttributeWriter<'a, T> {
-    inner: &'a mut Element<T>,
+    inner: &'a mut Element<T>
 }
 
 impl<'a, T: fmt::Write> fmt::Write for AttributeWriter<'a, T> {
+    
     fn write_str(&mut self, s: &str) -> fmt::Result {
         self.inner.write_str(s)
     }
@@ -205,7 +214,7 @@ impl<T: fmt::Write> Element<T> {
         ) -> Result<&'x mut AttributeWriter<'y, T>, fmt::Error>,
     {
         let [start, end] = tags;
-        write!(self.writer, "{}{} ", start, tag)?;
+        write!(self.writer, "{}{}", start, tag)?;
         func(&mut AttributeWriter { inner: self })?;
         write!(self.writer, "{}", end)?;
         Ok(self)
@@ -240,7 +249,7 @@ impl<T: fmt::Write> Element<T> {
     where
         F: FnOnce(ElementHeaderWriter<T>) -> Result<&mut Element<T>, fmt::Error>,
     {
-        write!(self.writer, "<{} ", tag)?;
+        write!(self.writer, "<{}", tag)?;
         let attr = ElementHeaderWriter(self);
 
         let _cert = func(attr)?;
