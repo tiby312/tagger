@@ -60,13 +60,13 @@ impl<T: std::io::Write> fmt::Write for WriterAdaptor<T> {
 ///Common tags to be used in [`Element::single_ext`]
 pub mod tag_types {
     /// Equivalent to `<{}/>`
-    pub static NORMAL: [&'static str; 2] = ["<", "/>"];
+    pub static NORMAL: [&str; 2] = ["<", "/>"];
     /// Equivalent to `<!--{}-->>`
-    pub static COMMENT: [&'static str; 2] = ["<!--", "-->"];
+    pub static COMMENT: [&str; 2] = ["<!--", "-->"];
     /// Equivalent to `<?{}?>`
-    pub static PROLOG: [&'static str; 2] = ["<?", "?>"];
+    pub static PROLOG: [&str; 2] = ["<?", "?>"];
     /// Equivalent to `<!{}>`
-    pub static DECL: [&'static str; 2] = ["<!", ">"];
+    pub static DECL: [&str; 2] = ["<!", ">"];
 }
 
 /// Used by [`Element::elem`]
@@ -95,7 +95,7 @@ impl<'a, T: Write> ElementHeaderWriter<'a, T> {
 pub trait WriteAttr: Write + Sized {
 
     ///Write the data attribute for a svg polyline.
-    fn polyline_data<'b, F>(&'b mut self, func: F) -> Result<&'b mut Self, fmt::Error>
+    fn polyline_data<F>(&mut self, func: F) -> Result<&mut Self, fmt::Error>
     where
         for<'x, 'y> F: FnOnce(
             &'x mut PolyLineBuilder<'y, Self>,
@@ -110,7 +110,7 @@ pub trait WriteAttr: Write + Sized {
     }
 
     ///Write the data attribute for a svg path.
-    fn path_data<'b, F>(&'b mut self, func: F) -> Result<&'b mut Self, fmt::Error>
+    fn path_data<F>(&mut self, func: F) -> Result<&mut Self, fmt::Error>
     where
         for<'x, 'y> F: FnOnce(
             &'x mut PathBuilder<'y, Self>,
