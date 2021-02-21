@@ -3,8 +3,9 @@
 //!
 //! ### Why so many closures?
 //!
-//! Unlike Drop, passing closures allows us to guarantee that some code runs that could fail
-//! during nominal execution.
+//! Unlike Drop, passing closures can be used to force the user to handle errors when 
+//! something goes out of scope. If we put the writing of end tags in a Drop method
+//! it could silently fail, which is not ideal.
 //!
 
 pub mod svg;
