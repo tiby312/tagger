@@ -4,12 +4,11 @@ fn main() -> core::fmt::Result {
     let mut root = tagger::Element::new(tagger::upgrade(std::io::stdout()));
 
     root.single_ext("DOCTYPE", tag_types::DECL, |a| {
-        write!(a, "html")?;
-        Ok(a)
+        write_ret!(a, "html")
     })?;
 
     root.elem_no_attr("style", |style| {
-        write!(
+        write_ret!(
             style,
             "{}",
             "table, th, td {
@@ -31,9 +30,9 @@ fn main() -> core::fmt::Result {
             table.elem("tr", |header| {
                 let tr = header.write(|e| Ok(e))?;
 
-                tr.elem_no_attr("th", |tr| write!(tr, "Hay {}:1", i))?;
-                tr.elem_no_attr("th", |tr| write!(tr, "Hay {}:2", i))?;
-                tr.elem_no_attr("th", |tr| write!(tr, "Hay {}:3", i))?;
+                tr.elem_no_attr("th", |tr| {write!(tr, "Hay {}:1", i)?;Ok(tr)})?;
+                tr.elem_no_attr("th", |tr| {write!(tr, "Hay {}:2", i)?;Ok(tr)})?;
+                tr.elem_no_attr("th", |tr| {write!(tr, "Hay {}:3", i)?;Ok(tr)})?;
 
                 Ok(tr)
             })?;

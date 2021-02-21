@@ -12,8 +12,7 @@ fn main() -> core::fmt::Result {
     })?;
 
     root.single_ext("", tag_types::COMMENT, |a| {
-        write!(a, "{}", "This is a comment")?;
-        Ok(a)
+        write_ret!(a, "{}", "This is a comment")
     })?;
 
     root.elem("svg", |header| {
@@ -34,7 +33,7 @@ fn main() -> core::fmt::Result {
 
         //Add styling for test class.
         svg.elem_no_attr("style", |style| {
-            write!(style, "{}", ".test{fill:none;stroke:white;stroke-width:3}")
+            write_ret!(style, "{}", ".test{fill:none;stroke:white;stroke-width:3}")
         })?;
 
         //Draw a poly line
@@ -69,9 +68,7 @@ fn main() -> core::fmt::Result {
                 })?;
             }
             Ok(g)
-        })?;
-
-        Ok(svg)
+        })
     })?;
 
     Ok(())

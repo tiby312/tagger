@@ -11,8 +11,9 @@
 pub mod svg;
 use svg::*;
 
-///Convenience macro to reduce code.
-///Create a closure that will use write!() with the formatting arguments.
+/// Convenience macro to reduce code.
+/// Shorthand for 'move |w|write!(w,...)`
+/// Create a closure that will use write!() with the formatting arguments.
 #[macro_export]
 macro_rules! wr {
     ($($arg:tt)*) => {
@@ -20,8 +21,22 @@ macro_rules! wr {
     }
 }
 
+/// [`fmt::Write::write_fmt`] doesn't return itself on success. This version does. 
+pub fn write_fmt_ret<'a,T:fmt::Write>(w:&'a mut T,args:fmt::Arguments)->Result<&'a mut T,fmt::Error>{
+    w.write_fmt(args)?;
+    Ok(w)
+}
+
+
+/// Just like the regular [`write!()`] macro except it returns itself upon success.
+#[macro_export]
+macro_rules! write_ret {
+    ($dst:expr, $($arg:tt)*) => ($crate::write_fmt_ret($dst,format_args!($($arg)*)))
+}
+
 ///The prelude to import the element manipulation convenience macros.
 pub mod prelude {
+    pub use super::write_ret;
     pub use super::wr;
     pub use super::WriteAttr;
     pub use core::fmt::Write;
@@ -44,6 +59,7 @@ pub fn upgrade<T: std::io::Write>(inner: T) -> WriterAdaptor<T> {
         error: Ok(()),
     }
 }
+
 impl<T: std::io::Write> fmt::Write for WriterAdaptor<T> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         match self.inner.write_all(s.as_bytes()) {
@@ -206,10 +222,10 @@ impl<T: fmt::Write> Element<T> {
     /// Shorthand for [`Element::elem`] with the attribute builder functionality omitted.
     pub fn elem_no_attr<F>(&mut self, tag: &str, func: F) -> Result<&mut Self, fmt::Error>
     where
-        for<'x> F: FnOnce(&'x mut Element<T>) -> fmt::Result,
+        for<'x> F: FnOnce(&'x mut Element<T>) -> Result<&'x mut Element<T>,fmt::Error>,
     {
         write!(self.writer, "<{}>", tag)?;
-        func(self)?;
+        let _ = func(self)?;
         write!(self.writer, "</{}>", tag)?;
         Ok(self)
     }
