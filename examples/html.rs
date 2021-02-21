@@ -27,14 +27,10 @@ fn main() -> core::fmt::Result {
         let table = header.write(|w| w.with_attr("style", wr!("width:{}%", 100)))?;
 
         for i in 0..20 {
-            table.elem("tr", |header| {
-                let tr = header.write(|e| Ok(e))?;
-
+            table.elem_no_attr("tr", |tr|{
                 tr.elem_no_attr("th", |tr| {write!(tr, "Hay {}:1", i)?;Ok(tr)})?;
                 tr.elem_no_attr("th", |tr| {write!(tr, "Hay {}:2", i)?;Ok(tr)})?;
-                tr.elem_no_attr("th", |tr| {write!(tr, "Hay {}:3", i)?;Ok(tr)})?;
-
-                Ok(tr)
+                tr.elem_no_attr("th", |tr| {write!(tr, "Hay {}:3", i)?;Ok(tr)})
             })?;
         }
 
