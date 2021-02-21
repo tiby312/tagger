@@ -1,11 +1,11 @@
 use tagger::prelude::*;
-use tagger::xml::tag_types;
+use tagger::tag_types;
 fn main() -> core::fmt::Result {
-    let mut root = tagger::xml::Element::new(tagger::upgrade(std::io::stdout()));
+    let mut root = tagger::Element::new(tagger::upgrade(std::io::stdout()));
 
     root.single_ext("DOCTYPE", tag_types::DECL, |a| {
         write!(a, "html")?;
-        a.ok()
+        Ok(a)
     })?;
 
     root.elem_no_attr("style", |style| {
@@ -25,20 +25,20 @@ fn main() -> core::fmt::Result {
     })?;
 
     root.elem("table", |builder| {
-        let table = builder.build(|w| w.with_attr("style", wr!("width:{}%", 100)))?;
+        let (table, cert) = builder.build(|w| w.with_attr("style", wr!("width:{}%", 100)))?;
 
         for i in 0..20 {
             table.elem("tr", |builder| {
-                let tr = builder.build(|e| e.ok())?;
+                let (tr, cert) = builder.build(|e| Ok(e))?;
 
                 tr.elem_no_attr("th", |tr| write!(tr, "Hay {}:1", i))?;
                 tr.elem_no_attr("th", |tr| write!(tr, "Hay {}:2", i))?;
                 tr.elem_no_attr("th", |tr| write!(tr, "Hay {}:3", i))?;
 
-                tr.ok()
+                cert
             })?;
         }
 
-        table.ok()
+        cert
     })
 }

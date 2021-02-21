@@ -1,10 +1,10 @@
 use tagger::prelude::*;
-use tagger::xml::tag_types;
+use tagger::tag_types;
 fn main() -> core::fmt::Result {
     let width = 100.0;
     let height = 100.0;
 
-    let mut root = tagger::xml::Element::new(tagger::upgrade(std::io::stdout()));
+    let mut root = tagger::Element::new(tagger::upgrade(std::io::stdout()));
     root.single_ext("xml", tag_types::PROLOG, |a| {
         a.with_attr("version", wr!("1.0"))?
             .attr("encoding", "UTF-8")?
@@ -13,11 +13,11 @@ fn main() -> core::fmt::Result {
 
     root.single_ext("", tag_types::COMMENT, |a| {
         write!(a, "{}", "This is a comment")?;
-        a.ok()
+        Ok(a)
     })?;
 
     root.elem("svg", |b| {
-        let svg = b.build(|b| {
+        let (svg, cert) = b.build(|b| {
             b.attr("xmlns", "http://www.w3.org/2000/svg")?
                 .with_attr("viewBox", wr!("0 0 {} {}", width, height))
         })?;
@@ -44,7 +44,6 @@ fn main() -> core::fmt::Result {
                 for i in 0..100 {
                     p.add_point([i as f32, (((i as f32) * 10.0 / 100.0).sin() + 1.0) * 25.0])?;
                 }
-
                 Ok(p)
             })
         })?;
@@ -63,15 +62,15 @@ fn main() -> core::fmt::Result {
 
         //Draw some circles
         svg.elem("g", |builder| {
-            let g = builder.build(|w| w.attr("class", "test"))?;
+            let (g, cert) = builder.build(|w| w.attr("class", "test"))?;
             for r in (0..50).step_by(10) {
                 g.single("circle", |w| {
                     w.attr("cx", 50.0)?.attr("cy", 50.0)?.attr("r", r)
                 })?;
             }
-            g.ok()
+            cert
         })?;
 
-        svg.ok()
+        cert
     })
 }
