@@ -17,8 +17,8 @@ fn main() -> core::fmt::Result {
         Ok(a)
     })?;
 
-    root.elem("svg", |b| {
-        let (svg, cert) = b.build(|b| {
+    root.elem("svg", |header| {
+        let (svg, cert) = header.write(|b| {
             b.attr("xmlns", "http://www.w3.org/2000/svg")?
                 .with_attr("viewBox", wr!("0 0 {} {}", width, height))
         })?;
@@ -62,8 +62,8 @@ fn main() -> core::fmt::Result {
         })?;
 
         //Draw some circles
-        svg.elem("g", |builder| {
-            let (g, cert) = builder.build(|w| w.attr("class", "test"))?;
+        svg.elem("g", |header| {
+            let (g, cert) = header.write(|w| w.attr("class", "test"))?;
             for r in (0..50).step_by(10) {
                 g.single("circle", |w| {
                     w.attr("cx", 50.0)?.attr("cy", 50.0)?.attr("r", r)
