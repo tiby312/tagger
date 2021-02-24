@@ -88,7 +88,7 @@ impl<T: std::io::Write> fmt::Write for WriterAdaptor<T> {
 pub mod tag_types {
     /// Equivalent to `<{}/>`
     pub static NORMAL: [&str; 2] = ["<", "/>"];
-    /// Equivalent to `<!--{}-->>`
+    /// Equivalent to `<!--{}-->`
     pub static COMMENT: [&str; 2] = ["<!--", "-->"];
     /// Equivalent to `<?{}?>`
     pub static PROLOG: [&str; 2] = ["<?", "?>"];
