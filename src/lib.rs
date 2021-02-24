@@ -8,7 +8,7 @@
 //! it could silently fail, which is not ideal. This can be worked around by adding
 //! an explicit function to write the end tag, but there is no way to guarantee
 //! that this function gets called at compile time. The best you can do is a runtime
-//! panic if the finalizer function isn't called in order to handler the error case.
+//! panic if the finalizer function isn't called in order to handle the error case.
 //! With closures, you can force a compile-time error.
 //!
 //! ### Examples
