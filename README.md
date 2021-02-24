@@ -33,7 +33,7 @@ fn main() -> core::fmt::Result {
 
         //Add styling for test class.
         svg.elem_no_attr("style", |style| {
-            write!(style, "{}", ".test{fill:none;stroke:white;stroke-width:3}")
+            write_ret!(style, "{}", ".test{fill:none;stroke:white;stroke-width:3}")
         })?;
 
         //Draw some circles
@@ -45,9 +45,7 @@ fn main() -> core::fmt::Result {
                 })?;
             }
             Ok(g)
-        })?;
-
-        Ok(svg)
+        })
     })?;
 
     Ok(())
