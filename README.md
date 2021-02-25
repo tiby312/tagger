@@ -5,6 +5,18 @@ Instead of using a templating engine, write data/markup that 'looks like' rust.
 
 Find it on [github](https://github.com/tiby312/tagger) and [crates.io](https://crates.io/crates/tagger).
 
+### Features
+
+Tagger aims to be memory efficient. Instead of constructing a nested structure of tags in memory and then have it be written out,
+Tagger will write out the elements to a `fmt::Write` object on the fly. 
+
+Tagger aims to guarantee correct writing of elements at compile time. At compile time, Tagger ensures that
+every tag has zero or more attributes, and that every tag that needs an ending tag, has one. This is achieved
+by nesting closures. That said this isn't 100% true. The user is allowed to write arbitrary data inside of any element,
+so it is possible that the user might insert tags that disrupt this guarantee. However, assuming the user doesn't
+manually write their own `<tags>` then there is this guarantee.
+
+
 ### Example
 
 ```rust
