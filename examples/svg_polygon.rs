@@ -1,5 +1,5 @@
 use tagger::prelude::*;
-        
+
 fn main() -> core::fmt::Result {
     let width = 500.0;
     let height = 400.0;
@@ -12,23 +12,18 @@ fn main() -> core::fmt::Result {
                 .with_attr("viewBox", wr!("0 0 {} {}", width, height))
         })?;
 
-
-
         //Draw a path
         svg.single("polygon", |w| {
-            w.attr("stroke","black")?;
-            w.attr("stroke-width",2)?;
-            w.attr("fill","green")?;
-            w.attr("fill-opacity",0.5)?;
-            use PathCommand::*;
+            w.attr("stroke", "black")?;
+            w.attr("stroke-width", 2)?;
+            w.attr("fill", "green")?;
+            w.attr("fill-opacity", 0.5)?;
 
-            w.points_data(|p|{
-                p.add_point(100,100)?;
-                p.add_point(200,100)?;
-                p.add_point(300,300)?;
-                p.add_point(100,200)
-                
-                
+            w.points_data(|p| {
+                p.add_point(100, 100)?;
+                p.add_point(200, 100)?;
+                p.add_point(300, 300)?;
+                p.add_point(100, 200)
             })
         })
     })?;
