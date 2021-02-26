@@ -16,6 +16,7 @@ by nesting closures. That said this isn't 100% true. The user is allowed to writ
 so it is possible that the user might insert tags that disrupt this guarantee. However, assuming the user doesn't
 manually write their own `<tags>` then there is this guarantee.
 
+Tagger also provides fuctionality to build svg paths and polyline attribute data.
 
 ### Example
 
