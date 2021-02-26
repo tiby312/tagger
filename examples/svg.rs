@@ -1,5 +1,7 @@
 use tagger::prelude::*;
 use tagger::tag_types;
+use tagger::svg::PathCommand;
+        
 fn main() -> core::fmt::Result {
     let width = 100.0;
     let height = 100.0;
@@ -51,11 +53,13 @@ fn main() -> core::fmt::Result {
         svg.single("path", |w| {
             w.attr("style", "fill:none;stroke:green")?;
             w.path_data(|p| {
-                p.move_to([50, 50])?;
+                p.draw(PathCommand::M(50,50))?;
                 for i in 0..100 {
-                    p.line_to([i as f32, (((i as f32) * 10.0 / 100.0).cos() + 1.0) * 25.0])?;
+                    let x=i as f32;
+                    let y=(((i as f32) * 10.0 / 100.0).cos() + 1.0) * 25.0;
+                    p.draw(PathCommand::L(x,y))?;
                 }
-                p.close()
+                p.draw_z()
             })
         })?;
 
