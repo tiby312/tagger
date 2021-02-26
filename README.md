@@ -11,11 +11,12 @@ Tagger aims to be memory efficient. Instead of constructing a nested structure o
 Tagger will write out the elements to a `fmt::Write` object on the fly. 
 
 Tagger aims to guarantee correct writing of elements at compile time. At compile time, Tagger ensures that
-every tag has zero or more attributes, and that every tag that needs an ending tag, has one. This is achieved
+every tag has zero or more attributes followed by symbol to complete that tag, and that every tag that needs an ending tag, has one. This is achieved
 by nesting closures. That said this isn't 100% true. The user is allowed to write arbitrary data inside of any element,
 so it is possible that the user might insert tags that disrupt this guarantee. However, assuming the user doesn't
 manually write their own `<tags>` then there is this guarantee.
 
+Tagger also provides fuctionality to build svg paths and polyline attribute data.
 
 ### Example
 
