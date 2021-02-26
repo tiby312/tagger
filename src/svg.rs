@@ -3,16 +3,16 @@
 //!
 use super::*;
 /// Create the attribute for a svg polyline. Used by [`WriteAttr::polyline_data`].
-pub struct PolyLineBuilder<'a, T: Write> {
+pub struct PointsBuilder<'a, T: Write> {
     inner: &'a mut T,
 }
-impl<'a, T: Write> PolyLineBuilder<'a, T> {
+impl<'a, T: Write> PointsBuilder<'a, T> {
     pub(super) fn new(inner: &'a mut T) -> Result<Self, fmt::Error> {
         write!(inner, " points=\"")?;
-        Ok(PolyLineBuilder { inner })
+        Ok(PointsBuilder { inner })
     }
-    pub fn add_point(&mut self, point: [impl fmt::Display; 2]) -> Result<&mut Self, fmt::Error> {
-        write!(self.inner, "{},{} ", point[0], point[1])?;
+    pub fn add_point(&mut self, x: impl fmt::Display, y:impl fmt::Display) -> Result<&mut Self, fmt::Error> {
+        write!(self.inner, "{},{} ", x, y)?;
         Ok(self)
     }
     pub(super) fn finish(&'a mut self) -> Result<&'a mut T, fmt::Error> {

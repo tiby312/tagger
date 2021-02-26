@@ -41,9 +41,9 @@ fn main() -> core::fmt::Result {
         //Draw a poly line
         svg.single("polyline", |w| {
             w.attr("style", "fill:none;stroke:red")?;
-            w.polyline_data(|p| {
+            w.points_data(|p| {
                 for i in 0..100 {
-                    p.add_point([i as f32, (((i as f32) * 10.0 / 100.0).sin() + 1.0) * 25.0])?;
+                    p.add_point(i as f32, (((i as f32) * 10.0 / 100.0).sin() + 1.0) * 25.0)?;
                 }
                 Ok(p)
             })

@@ -117,15 +117,15 @@ impl<'a, T: Write> ElementHeaderWriter<'a, T> {
 /// Functions the user can call to add attributes.
 /// [`AttributeWriter`] could have implemented these, but lets use a trait to simplify lifetimes.
 pub trait WriteAttr: Write + Sized {
-    ///Write the data attribute for a svg polyline.
-    fn polyline_data<F>(&mut self, func: F) -> Result<&mut Self, fmt::Error>
+    ///Write the data attribute for a svg polyline or polygon.
+    fn points_data<F>(&mut self, func: F) -> Result<&mut Self, fmt::Error>
     where
         for<'x, 'y> F: FnOnce(
-            &'x mut PolyLineBuilder<'y, Self>,
-        ) -> Result<&'x mut PolyLineBuilder<'y, Self>, fmt::Error>,
+            &'x mut PointsBuilder<'y, Self>,
+        ) -> Result<&'x mut PointsBuilder<'y, Self>, fmt::Error>,
     {
         {
-            let mut p = PolyLineBuilder::new(self)?;
+            let mut p = PointsBuilder::new(self)?;
             func(&mut p)?;
             p.finish()?;
         }
