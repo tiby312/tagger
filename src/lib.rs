@@ -183,6 +183,78 @@ impl<'a, T: fmt::Write> fmt::Write for AttributeWriter<'a, T> {
 }
 impl<'a, T: fmt::Write> WriteAttr for AttributeWriter<'a, T> {}
 
+
+
+
+pub struct ElementStack<'a,T>{
+    writer:Element<T>,
+    tags:Vec<&'a str>
+}
+impl<'a,T:fmt::Write> ElementStack<'a,T>{
+    
+    pub fn check_unwound(&mut self){
+        if !self.tags.is_empty(){
+            panic!("not all ending tags have been popped.")
+        }
+
+    }
+    pub fn new(writer:T)->ElementStack<'a,T>{
+        ElementStack{
+            writer:Element::new(writer),
+            tags:Vec::new()
+        }
+    }
+    pub fn from_element(writer:Element<T>)->ElementStack<'a,T>{
+        ElementStack{
+            writer,
+            tags:Vec::new()
+        }
+    }
+    /// Write a element that has an ending tag.
+    /// The user is required to feed the element back into this function
+    /// thus proving that they called [`ElementHeaderWriter::write`].
+    pub fn elem_stack<F>(&mut self, tag: &'a str, func: F) -> Result<&mut Self, fmt::Error>
+    where
+        for<'x, 'y> F: FnOnce(
+            &'x mut AttributeWriter<'y, T>,
+        ) -> Result<&'x mut AttributeWriter<'y, T>, fmt::Error>,
+    {
+        write!(self.writer, "<{}", tag)?;
+        let mut attr = AttributeWriter{inner:&mut self.writer};
+
+        let _cert = func(&mut attr)?;
+
+        write!(self.writer,">")?;
+
+        self.tags.push(tag);
+        //write!(self.writer, "</{}>", tag)?;
+        Ok(self)
+    }
+
+    ///Use Deref/DerefMut is possible
+    pub fn as_element(&mut self)->&mut Element<T>{
+        &mut self.writer
+    }
+    pub fn pop(&mut self)-> Result<&mut ElementStack<'a,T>, fmt::Error>{
+        let tag=self.tags.pop().expect("pop called too many times");
+        write!(self.writer,"</{}>",tag)?;
+        Ok(self)
+        
+    }
+}
+
+impl<'a,T> core::ops::Deref for ElementStack<'a,T>{
+    type Target=Element<T>;
+    fn deref(&self)->&Self::Target{
+        &self.writer
+    }
+}
+impl<'a,T> core::ops::DerefMut for ElementStack<'a,T>{
+    fn deref_mut(&mut self)->&mut Self::Target{
+        &mut self.writer
+    }
+}
+
 ///An element.
 pub struct Element<T> {
     writer: T,
@@ -198,6 +270,13 @@ impl<T: fmt::Write> Element<T> {
     /// Create a new element.
     pub fn new(writer: T) -> Self {
         Element { writer }
+    }
+
+    pub fn into_writer(self)->T{
+        self.writer
+    }
+    pub fn get_writer(&mut self)->&mut T{
+        &mut self.writer
     }
 
     /// Write a element that doesnt have an ending tag. i.e. it can only have attributes.
