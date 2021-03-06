@@ -1,17 +1,13 @@
-
-
 use tagger::prelude::*;
 fn main() -> core::fmt::Result {
     let width = 100.0;
     let height = 100.0;
 
-    
+    let mut stack = tagger::ElementStack::new(tagger::upgrade(std::io::stdout()));
 
-    let mut stack=tagger::ElementStack::new(tagger::upgrade(std::io::stdout()));
-    
-    stack.elem_stack("svg",|b|{
+    stack.elem_stack("svg", |b| {
         b.attr("xmlns", "http://www.w3.org/2000/svg")?
-        .with_attr("viewBox", wr!("0 0 {} {}", width, height))
+            .with_attr("viewBox", wr!("0 0 {} {}", width, height))
     })?;
 
     stack.single("rect", |w| {
@@ -29,7 +25,7 @@ fn main() -> core::fmt::Result {
         write_ret!(style, "{}", ".test{fill:none;stroke:white;stroke-width:3}")
     })?;
 
-    stack.elem_stack("g",|w|w.attr("class", "test"))?;
+    stack.elem_stack("g", |w| w.attr("class", "test"))?;
 
     //Draw some circles
     for r in (0..50).step_by(10) {

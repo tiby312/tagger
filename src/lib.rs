@@ -183,31 +183,26 @@ impl<'a, T: fmt::Write> fmt::Write for AttributeWriter<'a, T> {
 }
 impl<'a, T: fmt::Write> WriteAttr for AttributeWriter<'a, T> {}
 
-
-
-
-pub struct ElementStack<'a,T>{
-    writer:Element<T>,
-    tags:Vec<&'a str>
+pub struct ElementStack<'a, T> {
+    writer: Element<T>,
+    tags: Vec<&'a str>,
 }
-impl<'a,T:fmt::Write> ElementStack<'a,T>{
-    
-    pub fn check_unwound(&mut self){
-        if !self.tags.is_empty(){
+impl<'a, T: fmt::Write> ElementStack<'a, T> {
+    pub fn check_unwound(&mut self) {
+        if !self.tags.is_empty() {
             panic!("not all ending tags have been popped.")
         }
-
     }
-    pub fn new(writer:T)->ElementStack<'a,T>{
-        ElementStack{
-            writer:Element::new(writer),
-            tags:Vec::new()
+    pub fn new(writer: T) -> ElementStack<'a, T> {
+        ElementStack {
+            writer: Element::new(writer),
+            tags: Vec::new(),
         }
     }
-    pub fn from_element(writer:Element<T>)->ElementStack<'a,T>{
-        ElementStack{
+    pub fn from_element(writer: Element<T>) -> ElementStack<'a, T> {
+        ElementStack {
             writer,
-            tags:Vec::new()
+            tags: Vec::new(),
         }
     }
     /// Write a element that has an ending tag.
@@ -220,11 +215,13 @@ impl<'a,T:fmt::Write> ElementStack<'a,T>{
         ) -> Result<&'x mut AttributeWriter<'y, T>, fmt::Error>,
     {
         write!(self.writer, "<{}", tag)?;
-        let mut attr = AttributeWriter{inner:&mut self.writer};
+        let mut attr = AttributeWriter {
+            inner: &mut self.writer,
+        };
 
         let _cert = func(&mut attr)?;
 
-        write!(self.writer,">")?;
+        write!(self.writer, ">")?;
 
         self.tags.push(tag);
         //write!(self.writer, "</{}>", tag)?;
@@ -232,25 +229,24 @@ impl<'a,T:fmt::Write> ElementStack<'a,T>{
     }
 
     ///Use Deref/DerefMut is possible
-    pub fn as_element(&mut self)->&mut Element<T>{
+    pub fn as_element(&mut self) -> &mut Element<T> {
         &mut self.writer
     }
-    pub fn pop(&mut self)-> Result<&mut ElementStack<'a,T>, fmt::Error>{
-        let tag=self.tags.pop().expect("pop called too many times");
-        write!(self.writer,"</{}>",tag)?;
+    pub fn pop(&mut self) -> Result<&mut ElementStack<'a, T>, fmt::Error> {
+        let tag = self.tags.pop().expect("pop called too many times");
+        write!(self.writer, "</{}>", tag)?;
         Ok(self)
-        
     }
 }
 
-impl<'a,T> core::ops::Deref for ElementStack<'a,T>{
-    type Target=Element<T>;
-    fn deref(&self)->&Self::Target{
+impl<'a, T> core::ops::Deref for ElementStack<'a, T> {
+    type Target = Element<T>;
+    fn deref(&self) -> &Self::Target {
         &self.writer
     }
 }
-impl<'a,T> core::ops::DerefMut for ElementStack<'a,T>{
-    fn deref_mut(&mut self)->&mut Self::Target{
+impl<'a, T> core::ops::DerefMut for ElementStack<'a, T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.writer
     }
 }
@@ -272,10 +268,10 @@ impl<T: fmt::Write> Element<T> {
         Element { writer }
     }
 
-    pub fn into_writer(self)->T{
+    pub fn into_writer(self) -> T {
         self.writer
     }
-    pub fn get_writer(&mut self)->&mut T{
+    pub fn get_writer(&mut self) -> &mut T {
         &mut self.writer
     }
 
