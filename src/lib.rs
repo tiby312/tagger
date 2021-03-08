@@ -183,7 +183,6 @@ impl<'a, T: fmt::Write> fmt::Write for AttributeWriter<'a, T> {
 }
 impl<'a, T: fmt::Write> WriteAttr for AttributeWriter<'a, T> {}
 
-
 ///Sometimes, having to deal with all the borrowing and closures is difficult. For these cases
 ///a traditional ElementStack can be used. This allows you to move around the stack between functions and
 ///classes easily. The downside is that you lose compile time assurance that every push matches every pop.
