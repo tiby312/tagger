@@ -18,7 +18,7 @@ manually write their own `<tags>` then there is this guarantee.
 
 Tagger also provides functionality to build svg paths and polyline attribute data.
 
-Sometimes, having to deal with all the borrowing and closures is difficult, though. For these cases
+Sometimes, having to deal with all the borrowing and closures is difficult. For these cases
 a traditional ElementStack can be used. This allows you to move around the stack between functions and
 classes easily. The downside is that you lose compile time assurance that every push matches every pop.
 
