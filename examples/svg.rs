@@ -10,17 +10,20 @@ fn main() -> core::fmt::Result {
     root.single_ext("xml", tag_types::PROLOG, |a| {
         a.with_attr("version", wr!("1.0"))?
             .attr("encoding", "UTF-8")?
-            .attr("standalone", "yes")
+            .attr("standalone", "yes")?
+            .empty_ok()
     })?;
 
     root.single_ext("", tag_types::COMMENT, |a| {
-        write_ret!(a, "{}", "This is a comment")
+        write!(a, "{}", "This is a comment")?;
+        a.empty_ok()
     })?;
 
     root.elem("svg", |header| {
-        let svg = header.write(|b| {
+        let (svg, ()) = header.write(|b| {
             b.attr("xmlns", "http://www.w3.org/2000/svg")?
-                .with_attr("viewBox", wr!("0 0 {} {}", width, height))
+                .with_attr("viewBox", wr!("0 0 {} {}", width, height))?
+                .empty_ok()
         })?;
 
         svg.single("rect", |w| {
@@ -30,12 +33,14 @@ fn main() -> core::fmt::Result {
                 .attr("ry", 20)?
                 .attr("width", width)?
                 .attr("height", height)?
-                .attr("style", "fill:blue")
+                .attr("style", "fill:blue")?
+                .empty_ok()
         })?;
 
         //Add styling for test class.
         svg.elem_no_attr("style", |style| {
-            write_ret!(style, "{}", ".test{fill:none;stroke:white;stroke-width:3}")
+            write!(style, "{}", ".test{fill:none;stroke:white;stroke-width:3}")?;
+            style.empty_ok()
         })?;
 
         //Draw a poly line
@@ -46,7 +51,8 @@ fn main() -> core::fmt::Result {
                     p.add_point(i as f32, (((i as f32) * 10.0 / 100.0).sin() + 1.0) * 25.0)?;
                 }
                 Ok(p)
-            })
+            })?;
+            w.empty_ok()
         })?;
 
         //Draw a path
@@ -60,19 +66,25 @@ fn main() -> core::fmt::Result {
                     p.draw(PathCommand::L(x, y))?;
                 }
                 p.draw_z()
-            })
+            })?;
+            w.empty_ok()
         })?;
 
         //Draw some circles
         svg.elem("g", |header| {
-            let g = header.write(|w| w.attr("class", "test"))?;
+            let (g, ()) = header.write(|w| w.attr("class", "test")?.empty_ok())?;
             for r in (0..50).step_by(10) {
                 g.single("circle", |w| {
-                    w.attr("cx", 50.0)?.attr("cy", 50.0)?.attr("r", r)
+                    w.attr("cx", 50.0)?
+                        .attr("cy", 50.0)?
+                        .attr("r", r)?
+                        .empty_ok()
                 })?;
             }
-            Ok(g)
-        })
+            g.empty_ok()
+        })?;
+
+        svg.empty_ok()
     })?;
 
     Ok(())

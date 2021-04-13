@@ -7,9 +7,10 @@ fn main() -> core::fmt::Result {
     let mut root = tagger::Element::new(tagger::upgrade(std::io::stdout()));
 
     root.elem("svg", |header| {
-        let svg = header.write(|b| {
+        let (svg, ()) = header.write(|b| {
             b.attr("xmlns", "http://www.w3.org/2000/svg")?
-                .with_attr("viewBox", wr!("0 0 {} {}", width, height))
+                .with_attr("viewBox", wr!("0 0 {} {}", width, height))?
+                .empty_ok()
         })?;
 
         //Draw a path
@@ -24,8 +25,12 @@ fn main() -> core::fmt::Result {
                 p.add_point(200, 100)?;
                 p.add_point(300, 300)?;
                 p.add_point(100, 200)
-            })
-        })
+            })?;
+
+            w.empty_ok()
+        })?;
+
+        svg.empty_ok()
     })?;
 
     Ok(())

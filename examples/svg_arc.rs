@@ -8,9 +8,10 @@ fn main() -> core::fmt::Result {
     let mut root = tagger::Element::new(tagger::upgrade(std::io::stdout()));
 
     root.elem("svg", |header| {
-        let svg = header.write(|b| {
+        let (svg, ()) = header.write(|b| {
             b.attr("xmlns", "http://www.w3.org/2000/svg")?
-                .with_attr("viewBox", wr!("0 0 {} {}", width, height))
+                .with_attr("viewBox", wr!("0 0 {} {}", width, height))?
+                .empty_ok()
         })?;
 
         //Draw a path
@@ -25,7 +26,9 @@ fn main() -> core::fmt::Result {
                 p.draw(M(100, 200))?;
                 p.draw(C(100, 100, 250, 100, 250, 200))?;
                 p.draw(S(400, 300, 400, 200))
-            })
+            })?;
+
+            w.empty_ok()
         })?;
 
         svg.single("path", |w| {
@@ -39,7 +42,9 @@ fn main() -> core::fmt::Result {
                 p.draw(M(200, 120))?;
                 p.draw(Q(300, 50, 400, 120))?;
                 p.draw(T(500, 120))
-            })
+            })?;
+
+            w.empty_ok()
         })?;
 
         svg.single("path", |w| {
@@ -54,8 +59,12 @@ fn main() -> core::fmt::Result {
                 p.draw(H_(-150))?;
                 p.draw(A_(150, 150, 0, 1, 0, 150, -150))?;
                 p.draw_z()
-            })
-        })
+            })?;
+
+            w.empty_ok()
+        })?;
+
+        svg.empty_ok()
     })?;
 
     Ok(())
