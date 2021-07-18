@@ -5,7 +5,6 @@ use std::fmt::Formatter;
 /// Each function will only be run exactly once!!!!
 trait Elem{
     fn header(&self, f: &mut Formatter<'_>) -> fmt::Result;
-    fn body(&self, f: &mut Formatter<'_>) -> fmt::Result;
     fn end(&self, f: &mut Formatter<'_>) -> fmt::Result;
 }
 
@@ -22,14 +21,11 @@ struct ElementWrapper<T:Elem,J:Elem>{
 impl<T:Elem,J:Elem> Elem for ElementWrapper<T,J>{
 
     fn header(&self, f: &mut Formatter<'_>) -> fmt::Result{
-        self.a.header(f)
-    }
-    fn body(&self, f: &mut Formatter<'_>) -> fmt::Result{
-        self.a.body(f)?;
+        self.a.header(f)?;
         self.b.header(f)?;
-        self.b.body(f)?;
         self.b.end(f)
     }
+
     fn end(&self, f: &mut Formatter<'_>) -> fmt::Result{
         self.a.end(f)
     }
@@ -41,9 +37,7 @@ impl Elem for Empty{
     fn header(&self, _: &mut Formatter<'_>) -> fmt::Result{
         Ok(())
     }
-    fn body(&self, _: &mut Formatter<'_>) -> fmt::Result{
-        Ok(())
-    }
+
     fn end(&self, _: &mut Formatter<'_>) -> fmt::Result{
         Ok(())
     }
@@ -67,9 +61,6 @@ impl<'a> Elem for InnerElem<'a>{
     fn header(&self, f: &mut Formatter<'_>) -> fmt::Result{
         self.inner.header(f)
     }
-    fn body(&self, f: &mut Formatter<'_>) -> fmt::Result{
-        self.inner.body(f)
-    }
     fn end(&self, f: &mut Formatter<'_>) -> fmt::Result{
         self.inner.end(f)
     }
@@ -79,9 +70,7 @@ impl<'a> Elem for Element<'a>{
     fn header(&self, f: &mut Formatter<'_>) -> fmt::Result{
         self.inner.inner.header(f)
     }
-    fn body(&self, f: &mut Formatter<'_>) -> fmt::Result{
-        self.inner.inner.body(f)
-    }
+
     fn end(&self, f: &mut Formatter<'_>) -> fmt::Result{
         self.inner.inner.end(f)
     }
@@ -89,7 +78,6 @@ impl<'a> Elem for Element<'a>{
 impl<'a> Display for Element<'a>{
     fn fmt(&self,f:&mut fmt::Formatter<'_>)->fmt::Result{
         self.header(f)?;
-        self.body(f)?;
         self.end(f)
     }
 }
@@ -108,28 +96,25 @@ impl<'a> Element<'a>{
 }
 
 
-pub fn element<'a,A:Display+'a,B:Display+'a,C:Display+'a>(header:A,end:C,body:B)->Element<'a>{
+pub fn element<'a,A:Display+'a,B:Display+'a>(header:A,end:B)->Element<'a>{
 
-    struct DisplayElement<A,B,C>{
+    struct DisplayElement<A,B>{
         header:A,
-        body:B,
-        end:C
+        end:B
     }
     
-    impl<A:Display,B:Display,C:Display> Elem for DisplayElement<A,B,C>{
+    impl<A:Display,B:Display> Elem for DisplayElement<A,B>{
         fn header(&self, f: &mut Formatter<'_>) -> fmt::Result{
             write!(f,"{}",self.header)
         }
-        fn body(&self, f: &mut Formatter<'_>) -> fmt::Result{
-            write!(f,"{}",self.body)
-        }
+
         fn end(&self, f: &mut Formatter<'_>) -> fmt::Result{
             write!(f,"{}",self.end)
         }
     }
 
     Element{
-        inner:InnerElem::new(DisplayElement{header,body,end})   
+        inner:InnerElem::new(DisplayElement{header,end})   
     }
 }
 
@@ -344,7 +329,7 @@ macro_rules! one_thing {
     // `()` indicates that the macro takes no argument.
     ($a:expr) => {
         // The macro will expand into the contents of this block.
-        element("","",$a);
+        element($a,"");
     };
 }
 
@@ -353,6 +338,6 @@ macro_rules! empty_elem {
     // `()` indicates that the macro takes no argument.
     ($a:tt) => {
         // The macro will expand into the contents of this block.
-        element(concat!("<",$a,">"),concat!("</",$a,">"),"");
+        element(concat!("<",$a,">"),concat!("</",$a,">"));
     };
 }

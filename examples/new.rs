@@ -15,7 +15,7 @@ fn main(){
     p.finish();
 
 
-    let mut svg=element(move_format!("<svg {} {}>",p,k),"</svg>","");
+    let mut svg=element(move_format!("<svg {} {}>",p,k),"</svg>");
 
     //let mut svg=empty_elem!("svg");
     let mut g=empty_elem!("g");
