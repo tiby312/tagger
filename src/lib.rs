@@ -3,123 +3,108 @@ use std::fmt::Display;
 use std::fmt::Formatter;
 
 /// Each function will only be run exactly once!!!!
-trait Elem{
+trait Elem {
     fn header(&self, f: &mut Formatter<'_>) -> fmt::Result;
     fn end(&self, f: &mut Formatter<'_>) -> fmt::Result;
 }
 
-
-
-
-
-
-struct ElementWrapper<T:Elem,J:Elem>{
-    a:T,
-    b:J
+struct ElementWrapper<T: Elem, J: Elem> {
+    a: T,
+    b: J,
 }
 
-impl<T:Elem,J:Elem> Elem for ElementWrapper<T,J>{
-
-    fn header(&self, f: &mut Formatter<'_>) -> fmt::Result{
+impl<T: Elem, J: Elem> Elem for ElementWrapper<T, J> {
+    fn header(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.a.header(f)?;
         self.b.header(f)?;
         self.b.end(f)
     }
 
-    fn end(&self, f: &mut Formatter<'_>) -> fmt::Result{
+    fn end(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.a.end(f)
     }
 }
 
-
 struct Empty;
-impl Elem for Empty{
-    fn header(&self, _: &mut Formatter<'_>) -> fmt::Result{
+impl Elem for Empty {
+    fn header(&self, _: &mut Formatter<'_>) -> fmt::Result {
         Ok(())
     }
 
-    fn end(&self, _: &mut Formatter<'_>) -> fmt::Result{
+    fn end(&self, _: &mut Formatter<'_>) -> fmt::Result {
         Ok(())
     }
 }
 
-
-pub struct Element<'a>{
-    inner:InnerElem<'a>
+pub struct Element<'a> {
+    inner: InnerElem<'a>,
 }
 
-struct InnerElem<'a>{
-    inner:Box<dyn Elem+'a>
+struct InnerElem<'a> {
+    inner: Box<dyn Elem + 'a>,
 }
 
-impl<'a> InnerElem<'a>{
-    fn new(inner:impl Elem+'a)->Self{
-        InnerElem{inner:Box::new(inner)}
+impl<'a> InnerElem<'a> {
+    fn new(inner: impl Elem + 'a) -> Self {
+        InnerElem {
+            inner: Box::new(inner),
+        }
     }
 }
-impl<'a> Elem for InnerElem<'a>{
-    fn header(&self, f: &mut Formatter<'_>) -> fmt::Result{
+impl<'a> Elem for InnerElem<'a> {
+    fn header(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.inner.header(f)
     }
-    fn end(&self, f: &mut Formatter<'_>) -> fmt::Result{
+    fn end(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.inner.end(f)
     }
 }
 
-impl<'a> Elem for Element<'a>{
-    fn header(&self, f: &mut Formatter<'_>) -> fmt::Result{
+impl<'a> Elem for Element<'a> {
+    fn header(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.inner.inner.header(f)
     }
 
-    fn end(&self, f: &mut Formatter<'_>) -> fmt::Result{
+    fn end(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.inner.inner.end(f)
     }
 }
-impl<'a> Display for Element<'a>{
-    fn fmt(&self,f:&mut fmt::Formatter<'_>)->fmt::Result{
+impl<'a> Display for Element<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.header(f)?;
         self.end(f)
     }
 }
-impl<'a> Element<'a>{
-    pub fn append(&mut self,b:Element<'a>){
-        let mut a=InnerElem::new(Empty);
-        core::mem::swap(&mut a,&mut self.inner);
-        let e=ElementWrapper{
-            a,
-            b
-        };
+impl<'a> Element<'a> {
+    pub fn append(&mut self, b: Element<'a>) {
+        let mut a = InnerElem::new(Empty);
+        core::mem::swap(&mut a, &mut self.inner);
+        let e = ElementWrapper { a, b };
 
-        self.inner=InnerElem{inner:Box::new(e)};
-    }
-    
-}
-
-
-pub fn element<'a,A:Display+'a,B:Display+'a>(header:A,end:B)->Element<'a>{
-
-    struct DisplayElement<A,B>{
-        header:A,
-        end:B
-    }
-    
-    impl<A:Display,B:Display> Elem for DisplayElement<A,B>{
-        fn header(&self, f: &mut Formatter<'_>) -> fmt::Result{
-            write!(f,"{}",self.header)
-        }
-
-        fn end(&self, f: &mut Formatter<'_>) -> fmt::Result{
-            write!(f,"{}",self.end)
-        }
-    }
-
-    Element{
-        inner:InnerElem::new(DisplayElement{header,end})   
+        self.inner = InnerElem { inner: Box::new(e) };
     }
 }
 
+pub fn element<'a, A: Display + 'a, B: Display + 'a>(header: A, end: B) -> Element<'a> {
+    struct DisplayElement<A, B> {
+        header: A,
+        end: B,
+    }
 
+    impl<A: Display, B: Display> Elem for DisplayElement<A, B> {
+        fn header(&self, f: &mut Formatter<'_>) -> fmt::Result {
+            write!(f, "{}", self.header)
+        }
 
+        fn end(&self, f: &mut Formatter<'_>) -> fmt::Result {
+            write!(f, "{}", self.end)
+        }
+    }
+
+    Element {
+        inner: InnerElem::new(DisplayElement { header, end }),
+    }
+}
 
 ///
 /// Construct and Write a SVG path's data.
@@ -164,7 +149,6 @@ pub enum PathCommand<F: fmt::Display> {
     /// relative elliptical arc
     A_(F, F, F, F, F, F, F),
 }
-
 
 impl<F: fmt::Display> PathCommand<F> {
     fn write<T: fmt::Write>(&self, writer: &mut T) -> fmt::Result {
@@ -236,6 +220,50 @@ impl<F: fmt::Display> PathCommand<F> {
     }
 }
 
+pub struct Path<'a> {
+    inner: Element<'a>,
+}
+
+impl<'a> Display for Path<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.inner.fmt(f)
+    }
+}
+
+pub struct Attr<'a> {
+    inner: Element<'a>,
+}
+
+impl<'a> Display for Attr<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.inner.fmt(f)
+    }
+}
+
+pub struct AttrBuilder<'a> {
+    inner: Element<'a>,
+}
+impl<'a> AttrBuilder<'a> {
+    pub fn new() -> Self {
+        AttrBuilder {
+            inner: elem_single!(""),
+        }
+    }
+    pub fn attr_whole(&mut self, a: impl Display + 'a) -> &mut Self {
+        self.inner.append(elem_single!(a));
+        self
+    }
+    pub fn attr(&mut self, name: impl Display + 'a, b: impl Display + 'a) -> &mut Self {
+        self.inner
+            .append(elem_single!(move_format!("{}=\"{}\" ", name, b)));
+        self
+    }
+    pub fn finish(&mut self) -> Attr<'a> {
+        let mut k = elem_single!("");
+        core::mem::swap(&mut k, &mut self.inner);
+        Attr { inner: k }
+    }
+}
 
 /// Create the attribute for a svg polyline or polygon.
 pub struct PathBuilder<'a> {
@@ -243,30 +271,37 @@ pub struct PathBuilder<'a> {
 }
 impl<'a> PathBuilder<'a> {
     pub fn new() -> Self {
-        PathBuilder{inner:one_thing!("d=\"")}
+        PathBuilder {
+            inner: elem_single!("d=\""),
+        }
     }
-    pub fn draw_z(&mut self)->&mut Self{
-        self.inner.append(one_thing!("Z"));
+    pub fn draw_z(&mut self) -> &mut Self {
+        self.inner.append(elem_single!("Z"));
         self
     }
-    pub fn draw<F: fmt::Display+'a>(&mut self, val: PathCommand<F>) -> &mut Self {
-        self.inner.append(one_thing!(moveable_format(move |f|val.write(f) )));
-        self
-    }
-    
-    pub fn finish(&mut self) -> &mut Self {
-        self.inner.append(one_thing!("\""));
+    pub fn draw<F: fmt::Display + 'a>(&mut self, val: PathCommand<F>) -> &mut Self {
+        self.inner
+            .append(elem_single!(moveable_format(move |f| val.write(f))));
         self
     }
 
-
+    pub fn finish(&mut self) -> Path<'a> {
+        self.inner.append(elem_single!("\""));
+        let mut k = empty_elem!("");
+        core::mem::swap(&mut k, &mut self.inner);
+        Path { inner: k }
+    }
 }
-impl<'a> Display for PathBuilder<'a>{
-    fn fmt(&self,f:&mut fmt::Formatter<'_>)->fmt::Result{
+
+pub struct Points<'a> {
+    inner: Element<'a>,
+}
+
+impl<'a> Display for Points<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.inner.fmt(f)
     }
 }
-
 
 /// Create the attribute for a svg polyline or polygon.
 pub struct PointsBuilder<'a> {
@@ -274,30 +309,23 @@ pub struct PointsBuilder<'a> {
 }
 impl<'a> PointsBuilder<'a> {
     pub fn new() -> Self {
-        PointsBuilder{inner:one_thing!("points=\"")}
+        PointsBuilder {
+            inner: elem_single!("points=\""),
+        }
     }
-    pub fn add(
-        &mut self,
-        x: impl fmt::Display+'a,
-        y: impl fmt::Display+'a,
-    ) -> &mut Self {
-        self.inner.append(one_thing!(move_format!("{},{} ", x, y)));
+    pub fn add(&mut self, x: impl fmt::Display + 'a, y: impl fmt::Display + 'a) -> &mut Self {
+        self.inner
+            .append(elem_single!(move_format!("{},{} ", x, y)));
         self
     }
 
-    pub fn finish(&mut self) -> &mut Self {
-        self.inner.append(one_thing!("\""));
-        self
+    pub fn finish(&mut self) -> Points<'a> {
+        self.inner.append(elem_single!("\""));
+        let mut k = empty_elem!("");
+        core::mem::swap(&mut k, &mut self.inner);
+        Points { inner: k }
     }
 }
-impl<'a> Display for PointsBuilder<'a>{
-    fn fmt(&self,f:&mut fmt::Formatter<'_>)->fmt::Result{
-        self.inner.fmt(f)
-    }
-}
-
-
-
 
 /// Shorthand for `moveable_format(move |w|write!(w,...))`
 /// Similar to `format_args!()` except has a more flexible lifetime.
@@ -321,23 +349,13 @@ pub fn moveable_format(func: impl Fn(&mut fmt::Formatter) -> fmt::Result) -> imp
     Foo(func)
 }
 
-
-
 // This is a simple macro named `say_hello`.
 #[macro_export]
-macro_rules! one_thing {
+macro_rules! elem_single {
     // `()` indicates that the macro takes no argument.
     ($a:expr) => {
         // The macro will expand into the contents of this block.
-        element($a,"");
+        element($a, "");
     };
 }
 
-#[macro_export]
-macro_rules! empty_elem {
-    // `()` indicates that the macro takes no argument.
-    ($a:tt) => {
-        // The macro will expand into the contents of this block.
-        element(concat!("<",$a,">"),concat!("</",$a,">"));
-    };
-}
