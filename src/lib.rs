@@ -14,7 +14,7 @@ trait Elem{
 
 
 
-struct ElementWrapper<T,J>{
+struct ElementWrapper<T:Elem,J:Elem>{
     a:T,
     b:J
 }
@@ -36,15 +36,33 @@ impl<T:Elem,J:Elem> Elem for ElementWrapper<T,J>{
 }
 
 
+struct Empty;
+impl Elem for Empty{
+    fn header(&self, _: &mut Formatter<'_>) -> fmt::Result{
+        Ok(())
+    }
+    fn body(&self, _: &mut Formatter<'_>) -> fmt::Result{
+        Ok(())
+    }
+    fn end(&self, _: &mut Formatter<'_>) -> fmt::Result{
+        Ok(())
+    }
+}
+
 
 pub struct BoxedElement<'a>{
-    inner:Option<InnerElem<'a>>
+    inner:InnerElem<'a>
 }
 
 struct InnerElem<'a>{
     inner:Box<dyn Elem+'a>
 }
 
+impl<'a> InnerElem<'a>{
+    fn new(inner:impl Elem+'a)->Self{
+        InnerElem{inner:Box::new(inner)}
+    }
+}
 impl<'a> Elem for InnerElem<'a>{
     fn header(&self, f: &mut Formatter<'_>) -> fmt::Result{
         self.inner.header(f)
@@ -59,13 +77,13 @@ impl<'a> Elem for InnerElem<'a>{
 
 impl<'a> Elem for BoxedElement<'a>{
     fn header(&self, f: &mut Formatter<'_>) -> fmt::Result{
-        self.inner.as_ref().unwrap().inner.header(f)
+        self.inner.inner.header(f)
     }
     fn body(&self, f: &mut Formatter<'_>) -> fmt::Result{
-        self.inner.as_ref().unwrap().inner.body(f)
+        self.inner.inner.body(f)
     }
     fn end(&self, f: &mut Formatter<'_>) -> fmt::Result{
-        self.inner.as_ref().unwrap().inner.end(f)
+        self.inner.inner.end(f)
     }
 }
 impl<'a> Display for BoxedElement<'a>{
@@ -77,11 +95,16 @@ impl<'a> Display for BoxedElement<'a>{
 }
 impl<'a> BoxedElement<'a>{
     pub fn append(&mut self,b:BoxedElement<'a>){
+        let mut a=InnerElem::new(Empty);
+        core::mem::swap(&mut a,&mut self.inner);
         let e=ElementWrapper{
-            a:self.inner.take().unwrap(),
+            a,
             b
         };
-        self.inner=Some(InnerElem{inner:Box::new(e)});
+
+        self.inner=InnerElem{inner:Box::new(e)};
+        //core::mem::swap(&mut self.inner.inner,&mut j);
+        //self.inner=Some(InnerElem{inner:Box::new(e)});
     }
     
 }
@@ -98,7 +121,7 @@ pub fn element<'a,A:Display+'a,B:Display+'a,C:Display+'a>(header:A,end:C,body:B)
     impl<A:Display,B:Display,C:Display> Element<A,B,C>{
         fn box_self<'a>(self)->BoxedElement<'a>
             where A:'a,B:'a,C:'a{
-            BoxedElement{inner:Some(InnerElem{inner:Box::new(self)})}
+            BoxedElement{inner:InnerElem{inner:Box::new(self)}}
         }
     }
     
