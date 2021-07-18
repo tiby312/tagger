@@ -246,19 +246,19 @@ pub struct PathBuilder<'a> {
 }
 impl<'a> PathBuilder<'a> {
     pub fn new() -> Self {
-        PathBuilder{inner:element("","","d=\"")}
+        PathBuilder{inner:one_thing!("d=\"")}
     }
     pub fn draw_z(&mut self)->&mut Self{
-        self.inner.append(element("","","Z"));
+        self.inner.append(one_thing!("Z"));
         self
     }
     pub fn draw<F: fmt::Display+'a>(&mut self, val: PathCommand<F>) -> &mut Self {
-        self.inner.append(element("","", moveable_format(move |f|val.write(f) )));
+        self.inner.append(one_thing!(moveable_format(move |f|val.write(f) )));
         self
     }
     
     pub fn finish(&mut self) -> &mut Self {
-        self.inner.append(element("","","\""));
+        self.inner.append(one_thing!("\""));
         self
     }
 
@@ -277,19 +277,19 @@ pub struct PointsBuilder<'a> {
 }
 impl<'a> PointsBuilder<'a> {
     pub fn new() -> Self {
-        PointsBuilder{inner:element("","","points=\"")}
+        PointsBuilder{inner:one_thing!("points=\"")}
     }
     pub fn add(
         &mut self,
         x: impl fmt::Display+'a,
         y: impl fmt::Display+'a,
     ) -> &mut Self {
-        self.inner.append(element("","",move_format!("{},{} ", x, y)));
+        self.inner.append(one_thing!(move_format!("{},{} ", x, y)));
         self
     }
 
     pub fn finish(&mut self) -> &mut Self {
-        self.inner.append(element("","","\""));
+        self.inner.append(one_thing!("\""));
         self
     }
 }
