@@ -1,27 +1,23 @@
 use tagger::element;
-
-// This is a simple macro named `say_hello`.
-macro_rules! one_thing {
-    // `()` indicates that the macro takes no argument.
-    ($a:expr) => {
-        // The macro will expand into the contents of this block.
-        element("","",$a);
-    };
-}
-
-macro_rules! empty_elem {
-    // `()` indicates that the macro takes no argument.
-    ($a:tt) => {
-        // The macro will expand into the contents of this block.
-        element(concat!("<",$a,">"),concat!("</",$a,">"),"");
-    };
-}
+use tagger::*;
 
 
 fn main(){
+    let mut k=PathBuilder::new();
+    k.draw(PathCommand::L(5,3));
+    k.draw_z();
+    k.finish();
 
-    
-    let mut svg=empty_elem!("svg");
+    let mut p=PointsBuilder::new();
+    p.add(5,3);
+    p.add(5.0,3.5);
+    p.add(5,3);
+    p.finish();
+
+
+    let mut svg=element(move_format!("<svg {} {}>",p,k),"</svg>","");
+
+    //let mut svg=empty_elem!("svg");
     let mut g=empty_elem!("g");
     g.append(one_thing!("hello man"));
     g.append(one_thing!("hello man"));
@@ -30,4 +26,5 @@ fn main(){
     
     println!("{}",svg);
     
+    println!("{}",svg);
 }
