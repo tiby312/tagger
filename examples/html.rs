@@ -1,11 +1,14 @@
-use tagger::*;
+use tagger::prelude::*;
+use tagger::tag_types;
+fn main() -> core::fmt::Result {
+    let mut root = tagger::Element::new(tagger::upgrade(std::io::stdout()));
 
-fn main() {
-    let mut root = elem_single!("<!DOCTYPE html>");
+    root.single_ext("DOCTYPE", tag_types::DECL, |a| write_ret!(a, "html"))?;
 
-    let style = {
-        let mut style = element("<style>", "</style>");
-        style.append(elem_single!(
+    root.elem_no_attr("style", |style| {
+        write_ret!(
+            style,
+            "{}",
             "table, th, td {
             border: 1px solid black;
             border-collapse: collapse;
@@ -15,39 +18,31 @@ fn main() {
               from {background-color: red;}
               to {background-color: blue;}
           }"
-        ));
-        style
-    };
+        )
+    })?;
 
-    root.append(style);
-
-    let table = {
-        let f = AttrBuilder::new()
-            .attr("style", move_format!("width:{}%", 100))
-            .finish();
-        let mut table = element(move_format!("<table {}>", f), "</table>");
+    root.elem("table", |header| {
+        let table = header.write(|w| w.with_attr("style", wr!("width:{}%", 100)))?;
 
         for i in 0..20 {
-            let mut tr = element("<tr>", "</tr>");
-
-            let th =
-                element("<th>", "</th>").append_move(elem_single!(move_format!("Hay {}:1", i)));
-            tr.append(th);
-
-            let th =
-                element("<th>", "</th>").append_move(elem_single!(move_format!("Hay {}:2", i)));
-            tr.append(th);
-
-            let th =
-                element("<th>", "</th>").append_move(elem_single!(move_format!("Hay {}:3", i)));
-            tr.append(th);
-
-            table.append(tr);
+            table.elem_no_attr("tr", |tr| {
+                tr.elem_no_attr("th", |tr| {
+                    write!(tr, "Hay {}:1", i)?;
+                    Ok(tr)
+                })?;
+                tr.elem_no_attr("th", |tr| {
+                    write!(tr, "Hay {}:2", i)?;
+                    Ok(tr)
+                })?;
+                tr.elem_no_attr("th", |tr| {
+                    write!(tr, "Hay {}:3", i)?;
+                    Ok(tr)
+                })
+            })?;
         }
-        table
-    };
 
-    root.append(table);
+        Ok(table)
+    })?;
 
-    println!("{}", root);
+    Ok(())
 }
