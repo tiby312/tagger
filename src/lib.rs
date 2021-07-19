@@ -379,6 +379,24 @@ pub fn moveable_format(func: impl Fn(&mut fmt::Formatter) -> fmt::Result) -> imp
     Foo(func)
 }
 
+/// Uses `RefCell` to run the FnOnce on the first call to `fmt`. 
+/// On successive calls, do nothing.
+pub fn moveable_format_once(func: impl FnOnce(&mut fmt::Formatter) -> fmt::Result) -> impl fmt::Display {
+    use std::cell::RefCell;
+    struct Foo<F>(RefCell<Option<F>>);
+    impl<F: FnOnce(&mut fmt::Formatter) -> fmt::Result> fmt::Display for Foo<F> {
+        fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            if let Some(k)=self.0.borrow_mut().take(){
+                (k)(formatter)?;
+            }
+            Ok(())
+        }
+    }
+    Foo(RefCell::new(Some(func)))
+}
+
+
+
 /// Short hand for `element(x,"")`;
 #[macro_export]
 macro_rules! elem_single {
