@@ -36,6 +36,7 @@ impl Elem for Empty {
     }
 }
 
+/// The main building block
 pub struct Element<'a> {
     inner: InnerElem<'a>,
 }
@@ -76,10 +77,15 @@ impl<'a> Display for Element<'a> {
     }
 }
 impl<'a> Element<'a> {
+    /// Move equivalent of `append`
     pub fn append_move(mut self, b: Element<'a>) -> Self {
         self.append(b);
         self
     }
+
+    /// Append an element. The passed element will be inserted between
+    /// the first and second sections of the current element as specified by
+    /// the [`element`] function.
     pub fn append(&mut self, b: Element<'a>) -> &mut Self {
         let mut a = InnerElem::new(Empty);
         core::mem::swap(&mut a, &mut self.inner);
@@ -90,6 +96,7 @@ impl<'a> Element<'a> {
     }
 }
 
+/// Create an element.
 pub fn element<'a, A: Display + 'a, B: Display + 'a>(header: A, end: B) -> Element<'a> {
     struct DisplayElement<A, B> {
         header: A,
@@ -153,6 +160,8 @@ pub enum PathCommand<F: fmt::Display> {
     A(F, F, F, F, F, F, F),
     /// relative elliptical arc
     A_(F, F, F, F, F, F, F),
+    /// close path
+    Z(F)
 }
 
 impl<F: fmt::Display> PathCommand<F> {
@@ -221,10 +230,14 @@ impl<F: fmt::Display> PathCommand<F> {
                     rx, ry, x_axis_rotation, large_arc_flag, sweep_flag, dx, dy
                 )
             }
+            Z(_)=>{
+                write!(writer," Z")
+            }
         }
     }
 }
 
+/// A finished path
 pub struct Path<'a> {
     inner: Element<'a>,
 }
@@ -235,6 +248,8 @@ impl<'a> Display for Path<'a> {
     }
 }
 
+
+/// A finished list of attributes.
 pub struct Attr<'a> {
     inner: Element<'a>,
 }
@@ -245,24 +260,29 @@ impl<'a> Display for Attr<'a> {
     }
 }
 
+/// Builder to help make a list of attributes.
 pub struct AttrBuilder<'a> {
     inner: Element<'a>,
 }
 impl<'a> AttrBuilder<'a> {
+    /// Create a `AttrBuilder`
     pub fn new() -> Self {
         AttrBuilder {
             inner: elem_single!(""),
         }
     }
-    pub fn attr_whole(&mut self, a: impl Display + 'a) -> &mut Self {
+    /// Add one raw attribute
+    pub fn attr_raw(&mut self, a: impl Display + 'a) -> &mut Self {
         self.inner.append(elem_single!(a));
         self
     }
+    /// Add one attribute.
     pub fn attr(&mut self, name: impl Display + 'a, b: impl Display + 'a) -> &mut Self {
         self.inner
             .append(elem_single!(move_format!("{}=\"{}\" ", name, b)));
         self
     }
+    /// Finish creating a `Attr`
     pub fn finish(&mut self) -> Attr<'a> {
         let mut k = elem_single!("");
         core::mem::swap(&mut k, &mut self.inner);
@@ -275,21 +295,21 @@ pub struct PathBuilder<'a> {
     inner: Element<'a>,
 }
 impl<'a> PathBuilder<'a> {
+    /// Create a `PathBuilder`
     pub fn new() -> Self {
         PathBuilder {
             inner: elem_single!("d=\""),
         }
     }
-    pub fn add_z(&mut self) -> &mut Self {
-        self.inner.append(elem_single!("Z"));
-        self
-    }
+    
+    /// Add one path command.
     pub fn add<F: fmt::Display + 'a>(&mut self, val: PathCommand<F>) -> &mut Self {
         self.inner
             .append(elem_single!(moveable_format(move |f| val.write(f))));
         self
     }
 
+    /// Finish creating a path.
     pub fn finish(&mut self) -> Path<'a> {
         self.inner.append(elem_single!("\""));
         let mut k = element("", "");
@@ -298,6 +318,7 @@ impl<'a> PathBuilder<'a> {
     }
 }
 
+/// The finished product of [`PointsBuilder`]
 pub struct Points<'a> {
     inner: Element<'a>,
 }
@@ -313,17 +334,21 @@ pub struct PointsBuilder<'a> {
     inner: Element<'a>,
 }
 impl<'a> PointsBuilder<'a> {
+    /// Create a `PointsBuilder`
     pub fn new() -> Self {
         PointsBuilder {
             inner: elem_single!("points=\""),
         }
     }
+
+    /// Add one point to the list.
     pub fn add(&mut self, x: impl fmt::Display + 'a, y: impl fmt::Display + 'a) -> &mut Self {
         self.inner
             .append(elem_single!(move_format!("{},{} ", x, y)));
         self
     }
 
+    /// Finish creating the point list.
     pub fn finish(&mut self) -> Points<'a> {
         self.inner.append(elem_single!("\""));
         let mut k = element("", "");
@@ -354,34 +379,10 @@ pub fn moveable_format(func: impl Fn(&mut fmt::Formatter) -> fmt::Result) -> imp
     Foo(func)
 }
 
-// This is a simple macro named `say_hello`.
+/// Short hand for `element(x,"")`;
 #[macro_export]
 macro_rules! elem_single {
-    // `()` indicates that the macro takes no argument.
     ($a:expr) => {
-        // The macro will expand into the contents of this block.
         element($a, "");
     };
 }
-
-/*
-
-#[macro_export]
-macro_rules! elem_attr {
-    // `()` indicates that the macro takes no argument.
-    ($a:tt, $b:expr) => {
-        // The macro will expand into the contents of this block.
-        element(move_format!(concat!("<",$a," {}>"),$b),concat!("</",$a,">"));
-    };
-}
-
-
-#[macro_export]
-macro_rules! elem_attr_single {
-    // `()` indicates that the macro takes no argument.
-    ($x:expr,$a:tt, $b:expr) => {
-        // The macro will expand into the contents of this block.
-        $x.append(element(move_format!(concat!("<",$a," {}/>"),$b),""));
-    };
-}
-*/

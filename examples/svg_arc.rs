@@ -26,7 +26,7 @@ fn main() {
             .attr("stroke-width", 2)
             .attr("fill", "green")
             .attr("fill-opacity", 0.5)
-            .attr_whole(path)
+            .attr_raw(path)
             .finish();
 
         elem_single!(move_format!("<path {}/>", gc))
@@ -40,7 +40,7 @@ fn main() {
             .add(M(300, 200))
             .add(H_(-150))
             .add(A_(150, 150, 0, 1, 0, 150, -150))
-            .add_z()
+            .add(Z(""))
             .finish();
 
         let gc = AttrBuilder::new()
@@ -48,7 +48,7 @@ fn main() {
             .attr("stroke-width", 2)
             .attr("fill", "blue")
             .attr("fill-opacity", 0.5)
-            .attr_whole(path)
+            .attr_raw(path)
             .finish();
 
         elem_single!(move_format!("<path {}/>", gc))

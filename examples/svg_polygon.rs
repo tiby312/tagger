@@ -25,7 +25,7 @@ fn main() {
             .attr("stroke-width", 2)
             .attr("fill", "green")
             .attr("fill-opacity", 0.5)
-            .attr_whole(polygon)
+            .attr_raw(polygon)
             .finish();
 
         elem_single!(move_format!("<polygon {}/>", gc))
