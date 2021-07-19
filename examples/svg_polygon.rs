@@ -1,37 +1,37 @@
-use tagger::prelude::*;
-
-fn main() -> core::fmt::Result {
+use tagger::*;
+fn main() {
     let width = 500.0;
     let height = 400.0;
 
-    let mut root = tagger::Element::new(tagger::upgrade(std::io::stdout()));
+    let mut svg = {
+        let svg_attr = AttrBuilder::new()
+            .attr("xmlns", "http://www.w3.org/2000/svg")
+            .attr("viewBox", move_format!("0 0 {} {}", width, height))
+            .finish();
 
-    root.elem("svg", |header| {
-        let (svg, ()) = header.write(|b| {
-            b.attr("xmlns", "http://www.w3.org/2000/svg")?
-                .with_attr("viewBox", wr!("0 0 {} {}", width, height))?
-                .empty_ok()
-        })?;
+        element(move_format!("<svg {}>", svg_attr), "</svg>")
+    };
 
-        //Draw a path
-        svg.single("polygon", |w| {
-            w.attr("stroke", "black")?;
-            w.attr("stroke-width", 2)?;
-            w.attr("fill", "green")?;
-            w.attr("fill-opacity", 0.5)?;
+    let polygon = {
+        let polygon = PointsBuilder::new()
+            .add(100, 100)
+            .add(200, 100)
+            .add(300, 300)
+            .add(100, 200)
+            .finish();
 
-            w.points_data(|p| {
-                p.add_point(100, 100)?;
-                p.add_point(200, 100)?;
-                p.add_point(300, 300)?;
-                p.add_point(100, 200)
-            })?;
+        let gc = AttrBuilder::new()
+            .attr("stroke", "black")
+            .attr("stroke-width", 2)
+            .attr("fill", "green")
+            .attr("fill-opacity", 0.5)
+            .attr_raw(polygon)
+            .finish();
 
-            w.empty_ok()
-        })?;
+        elem_single!(move_format!("<polygon {}/>", gc))
+    };
 
-        svg.empty_ok()
-    })?;
+    svg.append(polygon);
 
-    Ok(())
+    println!("{}", svg);
 }

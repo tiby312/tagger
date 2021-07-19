@@ -5,75 +5,66 @@ Instead of using a templating engine, write data/markup that 'looks like' rust.
 
 Find it on [github](https://github.com/tiby312/tagger) and [crates.io](https://crates.io/crates/tagger).
 
-### Features
-
-Tagger aims to be memory efficient. Instead of constructing a nested structure of tags in memory and then have it be written out,
-Tagger will write out the elements to a `fmt::Write` object on the fly. 
-
-Tagger aims to guarantee correct writing of elements at compile time. At compile time, Tagger ensures that
-every tag has zero or more attributes followed by symbol to complete that tag, and that every tag that needs an ending tag, has one. This is achieved
-by nesting closures. That said this isn't 100% true. The user is allowed to write arbitrary data inside of any element,
-so it is possible that the user might insert tags that disrupt this guarantee. However, assuming the user doesn't
-manually write their own `<tags>` then there is this guarantee.
-
 Tagger also provides functionality to build svg paths and polyline attribute data.
-
-Sometimes, having to deal with all the borrowing and closures is difficult. For these cases
-a traditional ElementStack can be used. This allows you to move around the stack between functions and
-classes easily. The downside is that you lose compile time assurance that every push matches every pop.
-
 
 ### Example
 
 ```rust
-use tagger::prelude::*;
-fn main() -> core::fmt::Result {
+use tagger::*;
+fn main() {
     let width = 100.0;
     let height = 100.0;
 
-    let mut root = tagger::Element::new(tagger::upgrade(std::io::stdout()));
+    let mut svg = {
+        let svg_attr = AttrBuilder::new()
+            .attr("xmlns", "http://www.w3.org/2000/svg")
+            .attr("viewBox", move_format!("0 0 {} {}", width, height))
+            .finish();
 
-    root.elem("svg", |header| {
-        let (svg, ()) = header.write(|b| {
-            b.attr("xmlns", "http://www.w3.org/2000/svg")?
-                .with_attr("viewBox", wr!("0 0 {} {}", width, height))?
-                .empty_ok()
-        })?;
+        element(move_format!("<svg {}>", svg_attr), "</svg>")
+    };
 
-        svg.single("rect", |w| {
-            w.attr("x1", 0)?
-                .attr("y1", 0)?
-                .attr("rx", 20)?
-                .attr("ry", 20)?
-                .attr("width", width)?
-                .attr("height", height)?
-                .attr("style", "fill:blue")?
-                .empty_ok()
-        })?;
+    let rect = {
+        let rect_attr = AttrBuilder::new()
+            .attr("x1", 0)
+            .attr("y1", 0)
+            .attr("rx", 20)
+            .attr("ry", 20)
+            .attr("width", width)
+            .attr("height", height)
+            .attr("style", "fill:blue")
+            .finish();
+        elem_single!(move_format!("<rect {}/>", rect_attr))
+    };
 
-        //Add styling for test class.
-        svg.elem_no_attr("style", |style| {
-            write_ret!(style, "{}", ".test{fill:none;stroke:white;stroke-width:3}")?.empty_ok()
-        })?;
+    svg.append(rect);
 
-        //Draw some circles
-        svg.elem("g", |header| {
-            let (g, ()) = header.write(|w| w.attr("class", "test")?.empty_ok())?;
-            for r in (0..50).step_by(10) {
-                g.single("circle", |w| {
-                    w.attr("cx", 50.0)?
-                        .attr("cy", 50.0)?
-                        .attr("r", r)?
-                        .empty_ok()
-                })?;
-            }
-            g.empty_ok()
-        })?;
+    let style = {
+        let mut style = element("<style>", "</style>");
+        style.append(elem_single!(".test{fill:none;stroke:white;stroke-width:3}"));
+        style
+    };
 
-        svg.empty_ok()
-    })?;
+    svg.append(style);
 
-    Ok(())
+    let g = {
+        let gc = AttrBuilder::new().attr("class", "test").finish();
+        let mut g = element(move_format!("<g {}>", gc), "</g>");
+        for r in (0..50).step_by(10) {
+            let b = AttrBuilder::new()
+                .attr("cx", 50.0)
+                .attr("cy", 50.0)
+                .attr("r", r)
+                .finish();
+
+            g.append(elem_single!(move_format!("<circle {}/>", b)));
+        }
+        g
+    };
+
+    svg.append(g);
+
+    println!("{}", svg);
 }
 
 ```
