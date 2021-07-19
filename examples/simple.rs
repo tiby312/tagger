@@ -27,7 +27,7 @@ fn main() {
 
     svg.append(rect);
 
-    let style={
+    let style = {
         let mut style = element("<style>", "</style>");
         style.append(elem_single!(".test{fill:none;stroke:white;stroke-width:3}"));
         style
@@ -35,7 +35,7 @@ fn main() {
 
     svg.append(style);
 
-    let g={
+    let g = {
         let gc = AttrBuilder::new().attr("class", "test").finish();
         let mut g = element(move_format!("<g {}>", gc), "</g>");
         for r in (0..50).step_by(10) {

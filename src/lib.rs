@@ -280,11 +280,11 @@ impl<'a> PathBuilder<'a> {
             inner: elem_single!("d=\""),
         }
     }
-    pub fn draw_z(&mut self) -> &mut Self {
+    pub fn add_z(&mut self) -> &mut Self {
         self.inner.append(elem_single!("Z"));
         self
     }
-    pub fn draw<F: fmt::Display + 'a>(&mut self, val: PathCommand<F>) -> &mut Self {
+    pub fn add<F: fmt::Display + 'a>(&mut self, val: PathCommand<F>) -> &mut Self {
         self.inner
             .append(elem_single!(moveable_format(move |f| val.write(f))));
         self

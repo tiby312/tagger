@@ -1,71 +1,60 @@
-use tagger::prelude::*;
-use tagger::svg::PathCommand;
+use tagger::*;
 
-fn main() -> core::fmt::Result {
+fn main() {
     let width = 500.0;
     let height = 400.0;
 
-    let mut root = tagger::Element::new(tagger::upgrade(std::io::stdout()));
+    let mut svg = {
+        let svg_attr = AttrBuilder::new()
+            .attr("xmlns", "http://www.w3.org/2000/svg")
+            .attr("viewBox", move_format!("0 0 {} {}", width, height))
+            .finish();
 
-    root.elem("svg", |header| {
-        let (svg, ()) = header.write(|b| {
-            b.attr("xmlns", "http://www.w3.org/2000/svg")?
-                .with_attr("viewBox", wr!("0 0 {} {}", width, height))?
-                .empty_ok()
-        })?;
+        element(move_format!("<svg {}>", svg_attr), "</svg>")
+    };
 
-        //Draw a path
-        svg.single("path", |w| {
-            w.attr("stroke", "black")?;
-            w.attr("stroke-width", 2)?;
-            w.attr("fill", "green")?;
-            w.attr("fill-opacity", 0.5)?;
-            use PathCommand::*;
+    let path = {
+        use PathCommand::*;
+        let path = PathBuilder::new()
+            .add(M(200, 120))
+            .add(Q(300, 50, 400, 120))
+            .add(T(500, 120))
+            .finish();
 
-            w.path_data(|p| {
-                p.draw(M(100, 200))?;
-                p.draw(C(100, 100, 250, 100, 250, 200))?;
-                p.draw(S(400, 300, 400, 200))
-            })?;
+        let gc = AttrBuilder::new()
+            .attr("stroke", "black")
+            .attr("stroke-width", 2)
+            .attr("fill", "green")
+            .attr("fill-opacity", 0.5)
+            .attr_whole(path)
+            .finish();
 
-            w.empty_ok()
-        })?;
+        elem_single!(move_format!("<path {}/>", gc))
+    };
 
-        svg.single("path", |w| {
-            w.attr("stroke", "black")?;
-            w.attr("stroke-width", 2)?;
-            w.attr("fill", "red")?;
-            w.attr("fill-opacity", 0.5)?;
-            use PathCommand::*;
+    svg.append(path);
 
-            w.path_data(|p| {
-                p.draw(M(200, 120))?;
-                p.draw(Q(300, 50, 400, 120))?;
-                p.draw(T(500, 120))
-            })?;
+    let path = {
+        use PathCommand::*;
+        let path = PathBuilder::new()
+            .add(M(300, 200))
+            .add(H_(-150))
+            .add(A_(150, 150, 0, 1, 0, 150, -150))
+            .add_z()
+            .finish();
 
-            w.empty_ok()
-        })?;
+        let gc = AttrBuilder::new()
+            .attr("stroke", "black")
+            .attr("stroke-width", 2)
+            .attr("fill", "blue")
+            .attr("fill-opacity", 0.5)
+            .attr_whole(path)
+            .finish();
 
-        svg.single("path", |w| {
-            w.attr("stroke", "black")?;
-            w.attr("stroke-width", 2)?;
-            w.attr("fill", "blue")?;
-            w.attr("fill-opacity", 0.5)?;
-            use PathCommand::*;
+        elem_single!(move_format!("<path {}/>", gc))
+    };
 
-            w.path_data(|p| {
-                p.draw(M(300, 200))?;
-                p.draw(H_(-150))?;
-                p.draw(A_(150, 150, 0, 1, 0, 150, -150))?;
-                p.draw_z()
-            })?;
+    svg.append(path);
 
-            w.empty_ok()
-        })?;
-
-        svg.empty_ok()
-    })?;
-
-    Ok(())
+    println!("{}", svg);
 }
