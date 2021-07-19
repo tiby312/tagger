@@ -16,7 +16,6 @@ fn main() {
 
     let mut svg = elem_single!(move_format!("<svg {} {}/>", points, attr));
 
-    //let mut svg=empty_elem!("svg");
     let mut g = empty_elem!("g");
     g.append(elem_single!("hello man"));
     g.append(elem_single!("hello man"));

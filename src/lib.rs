@@ -76,12 +76,17 @@ impl<'a> Display for Element<'a> {
     }
 }
 impl<'a> Element<'a> {
-    pub fn append(&mut self, b: Element<'a>) {
+    pub fn append_move(mut self, b: Element<'a>) -> Self {
+        self.append(b);
+        self
+    }
+    pub fn append(&mut self, b: Element<'a>) -> &mut Self {
         let mut a = InnerElem::new(Empty);
         core::mem::swap(&mut a, &mut self.inner);
         let e = ElementWrapper { a, b };
 
         self.inner = InnerElem { inner: Box::new(e) };
+        self
     }
 }
 
@@ -287,7 +292,7 @@ impl<'a> PathBuilder<'a> {
 
     pub fn finish(&mut self) -> Path<'a> {
         self.inner.append(elem_single!("\""));
-        let mut k = empty_elem!("");
+        let mut k = element("", "");
         core::mem::swap(&mut k, &mut self.inner);
         Path { inner: k }
     }
@@ -321,7 +326,7 @@ impl<'a> PointsBuilder<'a> {
 
     pub fn finish(&mut self) -> Points<'a> {
         self.inner.append(elem_single!("\""));
-        let mut k = empty_elem!("");
+        let mut k = element("", "");
         core::mem::swap(&mut k, &mut self.inner);
         Points { inner: k }
     }
@@ -359,3 +364,24 @@ macro_rules! elem_single {
     };
 }
 
+/*
+
+#[macro_export]
+macro_rules! elem_attr {
+    // `()` indicates that the macro takes no argument.
+    ($a:tt, $b:expr) => {
+        // The macro will expand into the contents of this block.
+        element(move_format!(concat!("<",$a," {}>"),$b),concat!("</",$a,">"));
+    };
+}
+
+
+#[macro_export]
+macro_rules! elem_attr_single {
+    // `()` indicates that the macro takes no argument.
+    ($x:expr,$a:tt, $b:expr) => {
+        // The macro will expand into the contents of this block.
+        $x.append(element(move_format!(concat!("<",$a," {}/>"),$b),""));
+    };
+}
+*/
