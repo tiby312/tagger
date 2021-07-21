@@ -2,6 +2,12 @@ use std::fmt;
 use std::fmt::Display;
 use std::fmt::Formatter;
 
+
+pub mod prelude{
+    pub use crate::elem;
+    pub use crate::single;
+}
+
 /// Each function will only be run exactly once!!!!
 trait Elem {
     fn header(&self, f: &mut Formatter<'_>) -> fmt::Result;
@@ -412,14 +418,14 @@ macro_rules! elem {
     // `()` indicates that the macro takes no argument.
     ($a:tt, $b:expr) => {
         // The macro will expand into the contents of this block.
-        Element::new(
+        $crate::Element::new(
             formatm!(concat!("<", $a, " {}>"), $b),
             concat!("</", $a, ">"),
         );
     };
     ($a:tt) => {
         // The macro will expand into the contents of this block.
-        Element::new(concat!("<", $a, ">"), concat!("</", $a, ">"));
+        $crate::Element::new(concat!("<", $a, ">"), concat!("</", $a, ">"));
     };
 }
 
@@ -429,9 +435,9 @@ macro_rules! single {
     // `()` indicates that the macro takes no argument.
     ($a:tt, $b:expr) => {
         // The macro will expand into the contents of this block.
-        Element::new(formatm!(concat!("<", $a, " {}/>"), $b), "");
+        $crate::Element::new(formatm!(concat!("<", $a, " {}/>"), $b), "");
     };
     ($a:expr) => {
-        Element::new($a, "");
+        $crate::Element::new($a, "");
     };
 }
