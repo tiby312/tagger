@@ -3,10 +3,8 @@ use tagger::*;
 fn main() {
     let mut root = single!("<!DOCTYPE html>");
 
-    let style = {
-        let mut style = elem!("style");
-        style.append(single!(
-            "table, th, td {
+    let style = elem!("style").add(single!(
+        "table, th, td {
             border: 1px solid black;
             border-collapse: collapse;
             animation: mymove 5s infinite;
@@ -15,9 +13,7 @@ fn main() {
               from {background-color: red;}
               to {background-color: blue;}
           }"
-        ));
-        style
-    };
+    ));
 
     root.append(style);
 
@@ -33,11 +29,9 @@ fn main() {
 
             tr.append(elem!("th").add(single!(formatm!("Hay {}:1", i))));
 
-            let th = elem!("th").add(single!(formatm!("Hay {}:2", i)));
-            tr.append(th);
+            tr.append(elem!("th").add(single!(formatm!("Hay {}:2", i))));
 
-            let th = elem!("th").add(single!(formatm!("Hay {}:3", i)));
-            tr.append(th);
+            tr.append(elem!("th").add(single!(formatm!("Hay {}:3", i))));
 
             table.append(tr);
         }
