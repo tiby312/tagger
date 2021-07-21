@@ -1,11 +1,11 @@
 use tagger::*;
 
 fn main() {
-    let mut root = elem_single!("<!DOCTYPE html>");
+    let mut root = single!("<!DOCTYPE html>");
 
     let style = {
-        let mut style = element("<style>", "</style>");
-        style.append(elem_single!(
+        let mut style = elem!("style");
+        style.append(single!(
             "table, th, td {
             border: 1px solid black;
             border-collapse: collapse;
@@ -22,24 +22,21 @@ fn main() {
     root.append(style);
 
     let table = {
-        let f = AttrBuilder::new()
-            .attr("style", move_format!("width:{}%", 100))
+        let f = new_attr()
+            .attr("style", formatm!("width:{}%", 100))
             .finish();
-        let mut table = element(move_format!("<table {}>", f), "</table>");
+
+        let mut table = elem!("table", f);
 
         for i in 0..20 {
-            let mut tr = element("<tr>", "</tr>");
+            let mut tr = elem!("tr");
 
-            let th =
-                element("<th>", "</th>").append_move(elem_single!(move_format!("Hay {}:1", i)));
+            tr.append(elem!("th").add(single!(formatm!("Hay {}:1", i))));
+
+            let th = elem!("th").add(single!(formatm!("Hay {}:2", i)));
             tr.append(th);
 
-            let th =
-                element("<th>", "</th>").append_move(elem_single!(move_format!("Hay {}:2", i)));
-            tr.append(th);
-
-            let th =
-                element("<th>", "</th>").append_move(elem_single!(move_format!("Hay {}:3", i)));
+            let th = elem!("th").add(single!(formatm!("Hay {}:3", i)));
             tr.append(th);
 
             table.append(tr);

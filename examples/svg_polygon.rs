@@ -4,31 +4,31 @@ fn main() {
     let height = 400.0;
 
     let mut svg = {
-        let svg_attr = AttrBuilder::new()
+        let svg_attr = new_attr()
             .attr("xmlns", "http://www.w3.org/2000/svg")
-            .attr("viewBox", move_format!("0 0 {} {}", width, height))
+            .attr("viewBox", formatm!("0 0 {} {}", width, height))
             .finish();
 
-        element(move_format!("<svg {}>", svg_attr), "</svg>")
+        elem!("svg", svg_attr)
     };
 
     let polygon = {
-        let polygon = PointsBuilder::new()
+        let polygon = new_points()
             .add(100, 100)
             .add(200, 100)
             .add(300, 300)
             .add(100, 200)
             .finish();
 
-        let gc = AttrBuilder::new()
+        let gc = new_attr()
             .attr("stroke", "black")
             .attr("stroke-width", 2)
             .attr("fill", "green")
             .attr("fill-opacity", 0.5)
-            .attr_raw(polygon)
+            .attr_whole(polygon)
             .finish();
 
-        elem_single!(move_format!("<polygon {}/>", gc))
+        elem!("polygon", gc)
     };
 
     svg.append(polygon);

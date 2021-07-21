@@ -78,7 +78,7 @@ impl<'a> Display for Element<'a> {
 }
 impl<'a> Element<'a> {
     /// Move equivalent of `append`
-    pub fn append_move(mut self, b: Element<'a>) -> Self {
+    pub fn add(mut self, b: Element<'a>) -> Self {
         self.append(b);
         self
     }
@@ -161,7 +161,7 @@ pub enum PathCommand<F: fmt::Display> {
     /// relative elliptical arc
     A_(F, F, F, F, F, F, F),
     /// close path
-    Z(F)
+    Z(F),
 }
 
 impl<F: fmt::Display> PathCommand<F> {
@@ -230,8 +230,8 @@ impl<F: fmt::Display> PathCommand<F> {
                     rx, ry, x_axis_rotation, large_arc_flag, sweep_flag, dx, dy
                 )
             }
-            Z(_)=>{
-                write!(writer," Z")
+            Z(_) => {
+                write!(writer, " Z")
             }
         }
     }
@@ -247,7 +247,6 @@ impl<'a> Display for Path<'a> {
         self.inner.fmt(f)
     }
 }
-
 
 /// A finished list of attributes.
 pub struct Attr<'a> {
@@ -266,25 +265,22 @@ pub struct AttrBuilder<'a> {
 }
 impl<'a> AttrBuilder<'a> {
     /// Create a `AttrBuilder`
-    pub fn new() -> Self {
-        AttrBuilder {
-            inner: elem_single!(""),
-        }
+    fn new() -> Self {
+        AttrBuilder { inner: single!("") }
     }
-    /// Add one raw attribute
-    pub fn attr_raw(&mut self, a: impl Display + 'a) -> &mut Self {
-        self.inner.append(elem_single!(a));
+    /// Add one whole attribute
+    pub fn attr_whole(&mut self, a: impl Display + 'a) -> &mut Self {
+        self.inner.append(single!(a));
         self
     }
     /// Add one attribute.
     pub fn attr(&mut self, name: impl Display + 'a, b: impl Display + 'a) -> &mut Self {
-        self.inner
-            .append(elem_single!(move_format!("{}=\"{}\" ", name, b)));
+        self.inner.append(single!(formatm!("{}=\"{}\" ", name, b)));
         self
     }
     /// Finish creating a `Attr`
     pub fn finish(&mut self) -> Attr<'a> {
-        let mut k = elem_single!("");
+        let mut k = single!("");
         core::mem::swap(&mut k, &mut self.inner);
         Attr { inner: k }
     }
@@ -296,22 +292,22 @@ pub struct PathBuilder<'a> {
 }
 impl<'a> PathBuilder<'a> {
     /// Create a `PathBuilder`
-    pub fn new() -> Self {
+    fn new() -> Self {
         PathBuilder {
-            inner: elem_single!("d=\""),
+            inner: single!("d=\""),
         }
     }
-    
+
     /// Add one path command.
     pub fn add<F: fmt::Display + 'a>(&mut self, val: PathCommand<F>) -> &mut Self {
         self.inner
-            .append(elem_single!(moveable_format(move |f| val.write(f))));
+            .append(single!(moveable_format(move |f| val.write(f))));
         self
     }
 
     /// Finish creating a path.
     pub fn finish(&mut self) -> Path<'a> {
-        self.inner.append(elem_single!("\""));
+        self.inner.append(single!("\""));
         let mut k = element("", "");
         core::mem::swap(&mut k, &mut self.inner);
         Path { inner: k }
@@ -335,22 +331,21 @@ pub struct PointsBuilder<'a> {
 }
 impl<'a> PointsBuilder<'a> {
     /// Create a `PointsBuilder`
-    pub fn new() -> Self {
+    fn new() -> Self {
         PointsBuilder {
-            inner: elem_single!("points=\""),
+            inner: single!("points=\""),
         }
     }
 
     /// Add one point to the list.
     pub fn add(&mut self, x: impl fmt::Display + 'a, y: impl fmt::Display + 'a) -> &mut Self {
-        self.inner
-            .append(elem_single!(move_format!("{},{} ", x, y)));
+        self.inner.append(single!(formatm!("{},{} ", x, y)));
         self
     }
 
     /// Finish creating the point list.
     pub fn finish(&mut self) -> Points<'a> {
-        self.inner.append(elem_single!("\""));
+        self.inner.append(single!("\""));
         let mut k = element("", "");
         core::mem::swap(&mut k, &mut self.inner);
         Points { inner: k }
@@ -360,7 +355,7 @@ impl<'a> PointsBuilder<'a> {
 /// Shorthand for `moveable_format(move |w|write!(w,...))`
 /// Similar to `format_args!()` except has a more flexible lifetime.
 #[macro_export]
-macro_rules! move_format {
+macro_rules! formatm {
     ($($arg:tt)*) => {
         $crate::moveable_format(move |w| write!(w,$($arg)*))
     }
@@ -379,14 +374,16 @@ pub fn moveable_format(func: impl Fn(&mut fmt::Formatter) -> fmt::Result) -> imp
     Foo(func)
 }
 
-/// Uses `RefCell` to run the FnOnce on the first call to `fmt`. 
+/// Uses `RefCell` to run the FnOnce on the first call to `fmt`.
 /// On successive calls, do nothing.
-pub fn moveable_format_once(func: impl FnOnce(&mut fmt::Formatter) -> fmt::Result) -> impl fmt::Display {
+pub fn moveable_format_once(
+    func: impl FnOnce(&mut fmt::Formatter) -> fmt::Result,
+) -> impl fmt::Display {
     use std::cell::RefCell;
     struct Foo<F>(RefCell<Option<F>>);
     impl<F: FnOnce(&mut fmt::Formatter) -> fmt::Result> fmt::Display for Foo<F> {
         fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            if let Some(k)=self.0.borrow_mut().take(){
+            if let Some(k) = self.0.borrow_mut().take() {
                 (k)(formatter)?;
             }
             Ok(())
@@ -395,11 +392,46 @@ pub fn moveable_format_once(func: impl FnOnce(&mut fmt::Formatter) -> fmt::Resul
     Foo(RefCell::new(Some(func)))
 }
 
+pub struct Nothing;
 
+impl fmt::Display for Nothing {
+    fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
+        Ok(())
+    }
+}
 
-/// Short hand for `element(x,"")`;
+pub fn new_path<'a>() -> PathBuilder<'a> {
+    PathBuilder::new()
+}
+pub fn new_points<'a>() -> PointsBuilder<'a> {
+    PointsBuilder::new()
+}
+pub fn new_attr<'a>() -> AttrBuilder<'a> {
+    AttrBuilder::new()
+}
+
 #[macro_export]
-macro_rules! elem_single {
+macro_rules! elem {
+    // `()` indicates that the macro takes no argument.
+    ($a:tt, $b:expr) => {
+        // The macro will expand into the contents of this block.
+        element(
+            formatm!(concat!("<", $a, " {}>"), $b),
+            concat!("</", $a, ">"),
+        );
+    };
+    ($a:tt) => {
+        // The macro will expand into the contents of this block.
+        element(concat!("<", $a, ">"), concat!("</", $a, ">"));
+    };
+}
+#[macro_export]
+macro_rules! single {
+    // `()` indicates that the macro takes no argument.
+    ($a:tt, $b:expr) => {
+        // The macro will expand into the contents of this block.
+        element(formatm!(concat!("<", $a, " {}/>"), $b), "");
+    };
     ($a:expr) => {
         element($a, "");
     };
