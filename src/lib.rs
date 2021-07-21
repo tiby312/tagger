@@ -279,7 +279,7 @@ impl<'a> AttrBuilder<'a> {
         self
     }
     /// Finish creating a `Attr`
-    pub fn finish(&mut self) -> Attr<'a> {
+    pub fn build(&mut self) -> Attr<'a> {
         let mut k = single!("");
         core::mem::swap(&mut k, &mut self.inner);
         Attr { inner: k }
@@ -306,7 +306,7 @@ impl<'a> PathBuilder<'a> {
     }
 
     /// Finish creating a path.
-    pub fn finish(&mut self) -> Path<'a> {
+    pub fn build(&mut self) -> Path<'a> {
         self.inner.append(single!("\""));
         let mut k = element("", "");
         core::mem::swap(&mut k, &mut self.inner);
@@ -344,7 +344,7 @@ impl<'a> PointsBuilder<'a> {
     }
 
     /// Finish creating the point list.
-    pub fn finish(&mut self) -> Points<'a> {
+    pub fn build(&mut self) -> Points<'a> {
         self.inner.append(single!("\""));
         let mut k = element("", "");
         core::mem::swap(&mut k, &mut self.inner);

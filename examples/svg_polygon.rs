@@ -7,7 +7,7 @@ fn main() {
         let svg_attr = new_attr()
             .attr("xmlns", "http://www.w3.org/2000/svg")
             .attr("viewBox", formatm!("0 0 {} {}", width, height))
-            .finish();
+            .build();
 
         elem!("svg", svg_attr)
     };
@@ -18,7 +18,7 @@ fn main() {
             .add(200, 100)
             .add(300, 300)
             .add(100, 200)
-            .finish();
+            .build();
 
         let gc = new_attr()
             .attr("stroke", "black")
@@ -26,7 +26,7 @@ fn main() {
             .attr("fill", "green")
             .attr("fill-opacity", 0.5)
             .attr_whole(polygon)
-            .finish();
+            .build();
 
         elem!("polygon", gc)
     };

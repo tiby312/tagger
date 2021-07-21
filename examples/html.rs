@@ -18,9 +18,7 @@ fn main() {
     root.append(style);
 
     let table = {
-        let f = new_attr()
-            .attr("style", formatm!("width:{}%", 100))
-            .finish();
+        let f = new_attr().attr("style", formatm!("width:{}%", 100)).build();
 
         let mut table = elem!("table", f);
 

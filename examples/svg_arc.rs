@@ -8,7 +8,7 @@ fn main() {
         let svg_attr = new_attr()
             .attr("xmlns", "http://www.w3.org/2000/svg")
             .attr("viewBox", formatm!("0 0 {} {}", width, height))
-            .finish();
+            .build();
 
         elem!("svg", svg_attr)
     };
@@ -19,7 +19,7 @@ fn main() {
             .add(M(200, 120))
             .add(Q(300, 50, 400, 120))
             .add(T(500, 120))
-            .finish();
+            .build();
 
         let gc = new_attr()
             .attr("stroke", "black")
@@ -27,7 +27,7 @@ fn main() {
             .attr("fill", "green")
             .attr("fill-opacity", 0.5)
             .attr_whole(path)
-            .finish();
+            .build();
 
         elem!("path", gc)
     };
@@ -41,7 +41,7 @@ fn main() {
             .add(H_(-150))
             .add(A_(150, 150, 0, 1, 0, 150, -150))
             .add(Z(""))
-            .finish();
+            .build();
 
         let gc = new_attr()
             .attr("stroke", "black")
@@ -49,7 +49,7 @@ fn main() {
             .attr("fill", "blue")
             .attr("fill-opacity", 0.5)
             .attr_whole(path)
-            .finish();
+            .build();
 
         elem!("path", gc)
     };
