@@ -392,13 +392,7 @@ pub fn moveable_format_once(
     Foo(RefCell::new(Some(func)))
 }
 
-pub struct Nothing;
 
-impl fmt::Display for Nothing {
-    fn fmt(&self, _: &mut fmt::Formatter<'_>) -> fmt::Result {
-        Ok(())
-    }
-}
 
 pub fn new_path<'a>() -> PathBuilder<'a> {
     PathBuilder::new()
