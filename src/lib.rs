@@ -77,6 +77,29 @@ impl<'a> Display for Element<'a> {
     }
 }
 impl<'a> Element<'a> {
+
+    /// Create an element.
+    pub fn new<A: Display + 'a, B: Display + 'a>(header: A, end: B) -> Element<'a> {
+        struct DisplayElement<A, B> {
+            header: A,
+            end: B,
+        }
+
+        impl<A: Display, B: Display> Elem for DisplayElement<A, B> {
+            fn header(&self, f: &mut Formatter<'_>) -> fmt::Result {
+                write!(f, "{}", self.header)
+            }
+
+            fn end(&self, f: &mut Formatter<'_>) -> fmt::Result {
+                write!(f, "{}", self.end)
+            }
+        }
+
+        Element {
+            inner: InnerElem::new(DisplayElement { header, end }),
+        }
+    }
+
     /// Move equivalent of `append`
     pub fn add(mut self, b: Element<'a>) -> Self {
         self.append(b);
@@ -84,8 +107,7 @@ impl<'a> Element<'a> {
     }
 
     /// Append an element. The passed element will be inserted between
-    /// the first and second sections of the current element as specified by
-    /// the [`element`] function.
+    /// the first and second sections of the current element.
     pub fn append(&mut self, b: Element<'a>) -> &mut Self {
         let mut a = InnerElem::new(Empty);
         core::mem::swap(&mut a, &mut self.inner);
@@ -96,27 +118,6 @@ impl<'a> Element<'a> {
     }
 }
 
-/// Create an element.
-pub fn element<'a, A: Display + 'a, B: Display + 'a>(header: A, end: B) -> Element<'a> {
-    struct DisplayElement<A, B> {
-        header: A,
-        end: B,
-    }
-
-    impl<A: Display, B: Display> Elem for DisplayElement<A, B> {
-        fn header(&self, f: &mut Formatter<'_>) -> fmt::Result {
-            write!(f, "{}", self.header)
-        }
-
-        fn end(&self, f: &mut Formatter<'_>) -> fmt::Result {
-            write!(f, "{}", self.end)
-        }
-    }
-
-    Element {
-        inner: InnerElem::new(DisplayElement { header, end }),
-    }
-}
 
 ///
 /// Construct and Write a SVG path's data.
@@ -308,7 +309,7 @@ impl<'a> PathBuilder<'a> {
     /// Finish creating a path.
     pub fn build(&mut self) -> Path<'a> {
         self.inner.append(single!("\""));
-        let mut k = element("", "");
+        let mut k = single!("");
         core::mem::swap(&mut k, &mut self.inner);
         Path { inner: k }
     }
@@ -346,7 +347,7 @@ impl<'a> PointsBuilder<'a> {
     /// Finish creating the point list.
     pub fn build(&mut self) -> Points<'a> {
         self.inner.append(single!("\""));
-        let mut k = element("", "");
+        let mut k = single!("");
         core::mem::swap(&mut k, &mut self.inner);
         Points { inner: k }
     }
@@ -393,40 +394,47 @@ pub fn moveable_format_once(
 }
 
 
-
+/// Create a [`PathBuilder`]
 pub fn new_path<'a>() -> PathBuilder<'a> {
     PathBuilder::new()
 }
+
+/// Create a [`PointsBuilder`]
 pub fn new_points<'a>() -> PointsBuilder<'a> {
     PointsBuilder::new()
 }
+
+/// Create a [`AttrBuilder`]
 pub fn new_attr<'a>() -> AttrBuilder<'a> {
     AttrBuilder::new()
 }
 
+/// Create an element
 #[macro_export]
 macro_rules! elem {
     // `()` indicates that the macro takes no argument.
     ($a:tt, $b:expr) => {
         // The macro will expand into the contents of this block.
-        element(
+        Element::new(
             formatm!(concat!("<", $a, " {}>"), $b),
             concat!("</", $a, ">"),
         );
     };
     ($a:tt) => {
         // The macro will expand into the contents of this block.
-        element(concat!("<", $a, ">"), concat!("</", $a, ">"));
+        Element::new(concat!("<", $a, ">"), concat!("</", $a, ">"));
     };
 }
+
+/// Create a single tag element
 #[macro_export]
 macro_rules! single {
     // `()` indicates that the macro takes no argument.
     ($a:tt, $b:expr) => {
         // The macro will expand into the contents of this block.
-        element(formatm!(concat!("<", $a, " {}/>"), $b), "");
+        Element::new(formatm!(concat!("<", $a, " {}/>"), $b), "");
     };
     ($a:expr) => {
-        element($a, "");
+        Element::new($a, "");
     };
 }
