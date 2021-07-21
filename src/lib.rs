@@ -2,8 +2,7 @@ use std::fmt;
 use std::fmt::Display;
 use std::fmt::Formatter;
 
-
-pub mod prelude{
+pub mod prelude {
     pub use crate::elem;
     pub use crate::single;
 }
@@ -408,7 +407,7 @@ pub fn new_points<'a>() -> PointsBuilder<'a> {
 }
 
 /// Create a [`AttrBuilder`]
-pub fn new_attr<'a>() -> AttrBuilder<'a> {
+pub fn attr_list<'a>() -> AttrBuilder<'a> {
     AttrBuilder::new()
 }
 
