@@ -77,7 +77,6 @@ impl<'a> Display for Element<'a> {
     }
 }
 impl<'a> Element<'a> {
-
     /// Create an element.
     pub fn new<A: Display + 'a, B: Display + 'a>(header: A, end: B) -> Element<'a> {
         struct DisplayElement<A, B> {
@@ -117,7 +116,6 @@ impl<'a> Element<'a> {
         self
     }
 }
-
 
 ///
 /// Construct and Write a SVG path's data.
@@ -392,7 +390,6 @@ pub fn moveable_format_once(
     }
     Foo(RefCell::new(Some(func)))
 }
-
 
 /// Create a [`PathBuilder`]
 pub fn new_path<'a>() -> PathBuilder<'a> {
