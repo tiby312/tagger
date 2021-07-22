@@ -18,7 +18,7 @@ fn main() {
     root.append(style);
 
     let table = {
-        let f = attr_list()
+        let f = attr_builder()
             .attr("style", formatm!("width:{}%", 100))
             .build();
 

@@ -2,8 +2,10 @@ use std::fmt;
 use std::fmt::Display;
 use std::fmt::Formatter;
 
+/// The tagger prelude
 pub mod prelude {
     pub use crate::elem;
+    pub use crate::formatm;
     pub use crate::single;
 }
 
@@ -397,33 +399,30 @@ pub fn moveable_format_once(
 }
 
 /// Create a [`PathBuilder`]
-pub fn new_path<'a>() -> PathBuilder<'a> {
+pub fn path_builder<'a>() -> PathBuilder<'a> {
     PathBuilder::new()
 }
 
 /// Create a [`PointsBuilder`]
-pub fn new_points<'a>() -> PointsBuilder<'a> {
+pub fn points_builder<'a>() -> PointsBuilder<'a> {
     PointsBuilder::new()
 }
 
 /// Create a [`AttrBuilder`]
-pub fn attr_list<'a>() -> AttrBuilder<'a> {
+pub fn attr_builder<'a>() -> AttrBuilder<'a> {
     AttrBuilder::new()
 }
 
 /// Create an element
 #[macro_export]
 macro_rules! elem {
-    // `()` indicates that the macro takes no argument.
     ($a:tt, $b:expr) => {
-        // The macro will expand into the contents of this block.
         $crate::Element::new(
-            formatm!(concat!("<", $a, " {}>"), $b),
+            $crate::formatm!(concat!("<", $a, " {}>"), $b),
             concat!("</", $a, ">"),
         );
     };
     ($a:tt) => {
-        // The macro will expand into the contents of this block.
         $crate::Element::new(concat!("<", $a, ">"), concat!("</", $a, ">"));
     };
 }
@@ -431,10 +430,8 @@ macro_rules! elem {
 /// Create a single tag element
 #[macro_export]
 macro_rules! single {
-    // `()` indicates that the macro takes no argument.
     ($a:tt, $b:expr) => {
-        // The macro will expand into the contents of this block.
-        $crate::Element::new(formatm!(concat!("<", $a, " {}/>"), $b), "");
+        $crate::Element::new($crate::formatm!(concat!("<", $a, " {}/>"), $b), "");
     };
     ($a:expr) => {
         $crate::Element::new($a, "");

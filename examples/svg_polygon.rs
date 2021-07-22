@@ -4,7 +4,7 @@ fn main() {
     let height = 400.0;
 
     let mut svg = {
-        let svg_attr = attr_list()
+        let svg_attr = attr_builder()
             .attr("xmlns", "http://www.w3.org/2000/svg")
             .attr("viewBox", formatm!("0 0 {} {}", width, height))
             .build();
@@ -13,14 +13,14 @@ fn main() {
     };
 
     let polygon = {
-        let polygon = new_points()
+        let polygon = points_builder()
             .add(100, 100)
             .add(200, 100)
             .add(300, 300)
             .add(100, 200)
             .build();
 
-        let gc = attr_list()
+        let gc = attr_builder()
             .attr("stroke", "black")
             .attr("stroke-width", 2)
             .attr("fill", "green")

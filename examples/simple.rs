@@ -5,14 +5,14 @@ fn main() {
 
     let mut svg = elem!(
         "svg",
-        attr_list()
+        attr_builder()
             .attr("xmlns", "http://www.w3.org/2000/svg")
             .attr("viewBox", formatm!("0 0 {} {}", width, height))
             .build()
     );
 
     let rect = {
-        let rect_attr = attr_list()
+        let rect_attr = attr_builder()
             .attr("x1", 0)
             .attr("y1", 0)
             .attr("rx", 20)
@@ -30,12 +30,12 @@ fn main() {
     svg.append(style);
 
     let g = {
-        let gc = attr_list().attr("class", "test").build();
+        let gc = attr_builder().attr("class", "test").build();
         let mut g = elem!("g", gc);
         for r in (0..50).step_by(10) {
             g.append(single!(
                 "circle",
-                attr_list()
+                attr_builder()
                     .attr("cx", 50.0)
                     .attr("cy", 50.0)
                     .attr("r", r)
