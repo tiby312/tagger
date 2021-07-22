@@ -1,4 +1,5 @@
-use tagger::*;
+use tagger::prelude::*;
+use tagger::{attr_builder, points_builder};
 fn main() {
     let width = 500.0;
     let height = 400.0;

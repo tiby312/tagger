@@ -1,5 +1,5 @@
-use tagger::*;
-
+use tagger::prelude::*;
+use tagger::{attr_builder, path_builder};
 fn main() {
     let width = 500.0;
     let height = 400.0;
@@ -14,7 +14,7 @@ fn main() {
     };
 
     let path = {
-        use PathCommand::*;
+        use tagger::PathCommand::*;
         let path = path_builder()
             .add(M(200, 120))
             .add(Q(300, 50, 400, 120))
@@ -35,7 +35,7 @@ fn main() {
     svg.append(path);
 
     let path = {
-        use PathCommand::*;
+        use tagger::PathCommand::*;
         let path = path_builder()
             .add(M(300, 200))
             .add(H_(-150))

@@ -1,4 +1,5 @@
-use tagger::*;
+use tagger::attr_builder;
+use tagger::prelude::*;
 
 fn main() {
     let mut root = single!("<!DOCTYPE html>");
