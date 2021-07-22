@@ -1,5 +1,5 @@
-use tagger::prelude::*;
 use tagger::attr_builder;
+use tagger::prelude::*;
 
 fn main() {
     let width = 100.0;
