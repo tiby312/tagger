@@ -2,6 +2,18 @@ use std::fmt;
 use std::fmt::Display;
 use std::fmt::Formatter;
 
+#[cfg(doctest)]
+mod test_readme {
+    macro_rules! external_doc_test {
+        ($x:expr) => {
+            #[doc = $x]
+            extern "C" {}
+        };
+    }
+
+    external_doc_test!(include_str!("../README.md"));
+}
+
 /// The tagger prelude
 pub mod prelude {
     pub use crate::elem;
@@ -378,24 +390,6 @@ pub fn moveable_format(func: impl Fn(&mut fmt::Formatter) -> fmt::Result) -> imp
         }
     }
     Foo(func)
-}
-
-/// Uses `RefCell` to run the FnOnce on the first call to `fmt`.
-/// On successive calls, do nothing.
-pub fn moveable_format_once(
-    func: impl FnOnce(&mut fmt::Formatter) -> fmt::Result,
-) -> impl fmt::Display {
-    use std::cell::RefCell;
-    struct Foo<F>(RefCell<Option<F>>);
-    impl<F: FnOnce(&mut fmt::Formatter) -> fmt::Result> fmt::Display for Foo<F> {
-        fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            if let Some(k) = self.0.borrow_mut().take() {
-                (k)(formatter)?;
-            }
-            Ok(())
-        }
-    }
-    Foo(RefCell::new(Some(func)))
 }
 
 /// Create a [`PathBuilder`]

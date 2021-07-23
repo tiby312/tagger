@@ -13,40 +13,31 @@ fn main() {
             .build()
     );
 
-    let rect = {
-        let rect_attr = attr_builder()
-            .attr("x1", 0)
-            .attr("y1", 0)
-            .attr("rx", 20)
-            .attr("ry", 20)
-            .attr("width", width)
-            .attr("height", height)
-            .attr("style", "fill:blue")
-            .build();
-        single!("rect", rect_attr)
-    };
+    let rect_attr = attr_builder()
+        .attr("x1", 0)
+        .attr("y1", 0)
+        .attr("rx", 20)
+        .attr("ry", 20)
+        .attr("width", width)
+        .attr("height", height)
+        .attr("style", "fill:blue")
+        .build();
 
-    svg.append(rect);
+    svg.append(single!("rect", rect_attr));
 
-    let style = elem!("style").add(single!(".test{fill:none;stroke:white;stroke-width:3}"));
-    svg.append(style);
+    svg.append(elem!("style").add(single!(".test{fill:none;stroke:white;stroke-width:3}")));
 
-    let g = {
-        let gc = attr_builder().attr("class", "test").build();
-        let mut g = elem!("g", gc);
-        for r in (0..50).step_by(10) {
-            g.append(single!(
-                "circle",
-                attr_builder()
-                    .attr("cx", 50.0)
-                    .attr("cy", 50.0)
-                    .attr("r", r)
-                    .build()
-            ));
-        }
-        g
-    };
-
+    let mut g = elem!("g", attr_builder().attr("class", "test").build());
+    for r in (0..50).step_by(10) {
+        g.append(single!(
+            "circle",
+            attr_builder()
+                .attr("cx", 50.0)
+                .attr("cy", 50.0)
+                .attr("r", r)
+                .build()
+        ));
+    }
     svg.append(g);
 
     println!("{}", svg);
