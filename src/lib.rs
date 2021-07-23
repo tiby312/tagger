@@ -119,7 +119,7 @@ impl<'a> Element<'a> {
     }
 
     /// Move equivalent of `append`
-    pub fn add(mut self, b: Element<'a>) -> Self {
+    pub fn appendm(mut self, b: Element<'a>) -> Self {
         self.append(b);
         self
     }

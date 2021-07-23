@@ -4,7 +4,7 @@ use tagger::prelude::*;
 fn main() {
     let mut root = single!("<!DOCTYPE html>");
 
-    let style = elem!("style").add(single!(
+    let style = elem!("style").appendm(single!(
         "table, th, td {
             border: 1px solid black;
             border-collapse: collapse;
@@ -28,11 +28,11 @@ fn main() {
         for i in 0..20 {
             let mut tr = elem!("tr");
 
-            tr.append(elem!("th").add(single!(formatm!("Hay {}:1", i))));
+            tr.append(elem!("th").appendm(single!(formatm!("Hay {}:1", i))));
 
-            tr.append(elem!("th").add(single!(formatm!("Hay {}:2", i))));
+            tr.append(elem!("th").appendm(single!(formatm!("Hay {}:2", i))));
 
-            tr.append(elem!("th").add(single!(formatm!("Hay {}:3", i))));
+            tr.append(elem!("th").appendm(single!(formatm!("Hay {}:3", i))));
 
             table.append(tr);
         }

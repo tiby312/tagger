@@ -7,7 +7,7 @@ fn make_image() -> impl fmt::Display {
     let k = "my string!".to_string();
     svg.append(single!(k));
 
-    svg.add(elem!("g1").add(elem!("g2")))
+    svg.appendm(elem!("g1").appendm(elem!("g2")))
 }
 
 fn main() {
