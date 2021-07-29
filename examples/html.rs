@@ -2,9 +2,9 @@ use tagger::attr_builder;
 use tagger::prelude::*;
 
 fn main() {
-    let mut root = single!("<!DOCTYPE html>");
+    let mut root = tagger::Element::one_new("<!DOCTYPE html>");
 
-    let style = elem!("style").appendm(single!(
+    let style = elem!("style").appendm(
         "table, th, td {
             border: 1px solid black;
             border-collapse: collapse;
@@ -14,7 +14,7 @@ fn main() {
               from {background-color: red;}
               to {background-color: blue;}
           }"
-    ));
+    );
 
     root.append(style);
 
@@ -28,11 +28,11 @@ fn main() {
         for i in 0..20 {
             let mut tr = elem!("tr");
 
-            tr.append(elem!("th").appendm(single!(formatm!("Hay {}:1", i))));
+            tr.append(elem!("th").appendm(formatm!("Hay {}:1", i)));
 
-            tr.append(elem!("th").appendm(single!(formatm!("Hay {}:2", i))));
+            tr.append(elem!("th").appendm(formatm!("Hay {}:2", i)));
 
-            tr.append(elem!("th").appendm(single!(formatm!("Hay {}:3", i))));
+            tr.append(elem!("th").appendm(formatm!("Hay {}:3", i)));
 
             table.append(tr);
         }
@@ -41,5 +41,5 @@ fn main() {
 
     root.append(table);
 
-    println!("{}", root);
+    println!("{}", root.display());
 }

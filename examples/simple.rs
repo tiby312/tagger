@@ -25,7 +25,7 @@ fn main() {
 
     svg.append(single!("rect", rect_attr));
 
-    svg.append(elem!("style").appendm(single!(".test{fill:none;stroke:white;stroke-width:3}")));
+    svg.append(elem!("style").appendm(".test{fill:none;stroke:white;stroke-width:3}"));
 
     let mut g = elem!("g", attr_builder().attr("class", "test").build());
     for r in (0..50).step_by(10) {
@@ -40,5 +40,5 @@ fn main() {
     }
     svg.append(g);
 
-    println!("{}", svg);
+    println!("{}", svg.display());
 }

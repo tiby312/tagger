@@ -56,5 +56,5 @@ fn main() {
 
     svg.append(path);
 
-    println!("{}", svg);
+    println!("{}", svg.display());
 }

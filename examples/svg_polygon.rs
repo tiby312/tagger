@@ -34,5 +34,5 @@ fn main() {
 
     svg.append(polygon);
 
-    println!("{}", svg);
+    println!("{}", svg.display());
 }

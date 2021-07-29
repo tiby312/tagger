@@ -21,11 +21,23 @@ pub mod prelude {
     pub use crate::single;
 }
 
-/// Each function will only be run exactly once!!!!
-trait Elem {
+///
+/// An element that can be written in two stages.
+/// 
+pub trait Elem {
     fn header(&self, f: &mut Formatter<'_>) -> fmt::Result;
     fn end(&self, f: &mut Formatter<'_>) -> fmt::Result;
 }
+
+impl<T:fmt::Display> Elem for T{
+    fn header(&self, f: &mut Formatter<'_>) -> fmt::Result{
+        self.fmt(f)
+    }
+    fn end(&self, _: &mut Formatter<'_>) -> fmt::Result{
+        Ok(())
+    }
+}
+
 
 struct ElementWrapper<T: Elem, J: Elem> {
     a: T,
@@ -80,6 +92,7 @@ impl<'a> Elem for InnerElem<'a> {
     }
 }
 
+
 impl<'a> Elem for Element<'a> {
     fn header(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.inner.inner.header(f)
@@ -89,13 +102,25 @@ impl<'a> Elem for Element<'a> {
         self.inner.inner.end(f)
     }
 }
-impl<'a> Display for Element<'a> {
+
+
+impl<'a,'b> Display for DisplayableElement<'a,'b> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.header(f)?;
-        self.end(f)
+        self.0.header(f)?;
+        self.0.end(f)
     }
 }
+
+
+///
+/// We unfortunately can't have `Element` implement Display,
+/// because this would intersect with the blanket `impl<T:Display> Elem for T{}` 
+/// So we instead introduce a new type.
+/// 
+pub struct DisplayableElement<'a,'b>(&'b Element<'a>);
+
 impl<'a> Element<'a> {
+
     /// Create an element.
     pub fn new<A: Display + 'a, B: Display + 'a>(header: A, end: B) -> Element<'a> {
         struct DisplayElement<A, B> {
@@ -118,21 +143,29 @@ impl<'a> Element<'a> {
         }
     }
 
+    pub fn one_new<A:Display+'a>(a:A)->Element<'a>{
+        Element::new(a,"")
+    }
+
     /// Move equivalent of `append`
-    pub fn appendm(mut self, b: Element<'a>) -> Self {
+    pub fn appendm<K:Elem+'a>(mut self,b:K) -> Self {
         self.append(b);
         self
     }
 
     /// Append an element. The passed element will be inserted between
     /// the first and second sections of the current element.
-    pub fn append(&mut self, b: Element<'a>) -> &mut Self {
+    pub fn append<K:Elem+'a>(&mut self, b: K) -> &mut Self {
         let mut a = InnerElem::new(Empty);
         core::mem::swap(&mut a, &mut self.inner);
         let e = ElementWrapper { a, b };
 
         self.inner = InnerElem { inner: Box::new(e) };
         self
+    }
+
+    pub fn display(&self)->DisplayableElement{
+        DisplayableElement(self)
     }
 }
 
@@ -262,7 +295,7 @@ pub struct Path<'a> {
 
 impl<'a> Display for Path<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.inner.fmt(f)
+        self.inner.display().fmt(f)
     }
 }
 
@@ -273,7 +306,7 @@ pub struct Attr<'a> {
 
 impl<'a> Display for Attr<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.inner.fmt(f)
+        self.inner.display().fmt(f)
     }
 }
 
@@ -284,21 +317,21 @@ pub struct AttrBuilder<'a> {
 impl<'a> AttrBuilder<'a> {
     /// Create a `AttrBuilder`
     fn new() -> Self {
-        AttrBuilder { inner: single!("") }
+        AttrBuilder { inner: Element::one_new("") }
     }
     /// Add one whole attribute
     pub fn attr_whole(&mut self, a: impl Display + 'a) -> &mut Self {
-        self.inner.append(single!(a));
+        self.inner.append(a);
         self
     }
     /// Add one attribute.
     pub fn attr(&mut self, name: impl Display + 'a, b: impl Display + 'a) -> &mut Self {
-        self.inner.append(single!(formatm!("{}=\"{}\" ", name, b)));
+        self.inner.append(formatm!("{}=\"{}\" ", name, b));
         self
     }
     /// Finish creating a `Attr`
     pub fn build(&mut self) -> Attr<'a> {
-        let mut k = single!("");
+        let mut k = Element::one_new("");
         core::mem::swap(&mut k, &mut self.inner);
         Attr { inner: k }
     }
@@ -312,21 +345,21 @@ impl<'a> PathBuilder<'a> {
     /// Create a `PathBuilder`
     fn new() -> Self {
         PathBuilder {
-            inner: single!("d=\""),
+            inner: Element::one_new("d=\""),
         }
     }
 
     /// Add one path command.
     pub fn add<F: fmt::Display + 'a>(&mut self, val: PathCommand<F>) -> &mut Self {
         self.inner
-            .append(single!(moveable_format(move |f| val.write(f))));
+            .append(moveable_format(move |f| val.write(f)));
         self
     }
 
     /// Finish creating a path.
     pub fn build(&mut self) -> Path<'a> {
-        self.inner.append(single!("\""));
-        let mut k = single!("");
+        self.inner.append("\"");
+        let mut k = Element::one_new("");
         core::mem::swap(&mut k, &mut self.inner);
         Path { inner: k }
     }
@@ -339,7 +372,7 @@ pub struct Points<'a> {
 
 impl<'a> Display for Points<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.inner.fmt(f)
+        self.inner.display().fmt(f)
     }
 }
 
@@ -351,20 +384,20 @@ impl<'a> PointsBuilder<'a> {
     /// Create a `PointsBuilder`
     fn new() -> Self {
         PointsBuilder {
-            inner: single!("points=\""),
+            inner: Element::one_new("points=\""),
         }
     }
 
     /// Add one point to the list.
     pub fn add(&mut self, x: impl fmt::Display + 'a, y: impl fmt::Display + 'a) -> &mut Self {
-        self.inner.append(single!(formatm!("{},{} ", x, y)));
+        self.inner.append(formatm!("{},{} ", x, y));
         self
     }
 
     /// Finish creating the point list.
     pub fn build(&mut self) -> Points<'a> {
-        self.inner.append(single!("\""));
-        let mut k = single!("");
+        self.inner.append("\"");
+        let mut k = Element::one_new("");
         core::mem::swap(&mut k, &mut self.inner);
         Points { inner: k }
     }
@@ -426,8 +459,5 @@ macro_rules! elem {
 macro_rules! single {
     ($a:tt, $b:expr) => {
         $crate::Element::new($crate::formatm!(concat!("<", $a, " {}/>"), $b), "");
-    };
-    ($a:expr) => {
-        $crate::Element::new($a, "");
     };
 }
