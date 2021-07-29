@@ -40,5 +40,6 @@ fn main() {
     }
     svg.append(g);
 
+
     println!("{}", svg.display());
 }

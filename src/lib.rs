@@ -119,6 +119,20 @@ impl<'a,'b> Display for DisplayableElement<'a,'b> {
 /// 
 pub struct DisplayableElement<'a,'b>(&'b Element<'a>);
 
+///
+/// Owned version of `DisplayableElement`
+/// 
+#[repr(transparent)]
+pub struct OwnedDisplayableElement<'a>(Element<'a>);
+
+impl<'a> Display for OwnedDisplayableElement<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.header(f)?;
+        self.0.end(f)
+    }
+}
+
+
 impl<'a> Element<'a> {
 
     /// Create an element.
@@ -166,6 +180,10 @@ impl<'a> Element<'a> {
 
     pub fn display(&self)->DisplayableElement{
         DisplayableElement(self)
+    }
+
+    pub fn displaym(self)->OwnedDisplayableElement<'a>{
+        OwnedDisplayableElement(self)
     }
 }
 
