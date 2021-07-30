@@ -1,4 +1,3 @@
-use tagger::attr_builder;
 use tagger::prelude::*;
 
 fn main() {
@@ -13,17 +12,13 @@ fn main() {
           @keyframes mymove {
               from {background-color: red;}
               to {background-color: blue;}
-          }"
+          }",
     );
 
     root.append(style);
 
     let table = {
-        let f = attr_builder()
-            .attr("style", formatm!("width:{}%", 100))
-            .build();
-
-        let mut table = elem!("table", f);
+        let mut table = elem!("table", ("style", formatm!("width:{}%", 100)));
 
         for i in 0..20 {
             let mut tr = elem!("tr");

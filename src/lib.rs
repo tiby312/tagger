@@ -18,26 +18,27 @@ mod test_readme {
 pub mod prelude {
     pub use crate::elem;
     pub use crate::formatm;
+    pub use crate::path;
+    pub use crate::points;
     pub use crate::single;
 }
 
 ///
 /// An element that can be written in two stages.
-/// 
+///
 pub trait Elem {
     fn header(&self, f: &mut Formatter<'_>) -> fmt::Result;
     fn end(&self, f: &mut Formatter<'_>) -> fmt::Result;
 }
 
-impl<T:fmt::Display> Elem for T{
-    fn header(&self, f: &mut Formatter<'_>) -> fmt::Result{
+impl<T: fmt::Display> Elem for T {
+    fn header(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.fmt(f)
     }
-    fn end(&self, _: &mut Formatter<'_>) -> fmt::Result{
+    fn end(&self, _: &mut Formatter<'_>) -> fmt::Result {
         Ok(())
     }
 }
-
 
 struct ElementWrapper<T: Elem, J: Elem> {
     a: T,
@@ -92,7 +93,6 @@ impl<'a> Elem for InnerElem<'a> {
     }
 }
 
-
 impl<'a> Elem for Element<'a> {
     fn header(&self, f: &mut Formatter<'_>) -> fmt::Result {
         self.inner.inner.header(f)
@@ -103,25 +103,23 @@ impl<'a> Elem for Element<'a> {
     }
 }
 
-
-impl<'a,'b> Display for DisplayableElement<'a,'b> {
+impl<'a, 'b> Display for DisplayableElement<'a, 'b> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.0.header(f)?;
         self.0.end(f)
     }
 }
 
-
 ///
 /// We unfortunately can't have `Element` implement Display,
-/// because this would intersect with the blanket `impl<T:Display> Elem for T{}` 
+/// because this would intersect with the blanket `impl<T:Display> Elem for T{}`
 /// So we instead introduce a new type.
-/// 
-pub struct DisplayableElement<'a,'b>(&'b Element<'a>);
+///
+pub struct DisplayableElement<'a, 'b>(&'b Element<'a>);
 
 ///
 /// Owned version of `DisplayableElement`
-/// 
+///
 #[repr(transparent)]
 pub struct OwnedDisplayableElement<'a>(Element<'a>);
 
@@ -132,9 +130,7 @@ impl<'a> Display for OwnedDisplayableElement<'a> {
     }
 }
 
-
 impl<'a> Element<'a> {
-
     /// Create an element.
     pub fn new<A: Display + 'a, B: Display + 'a>(header: A, end: B) -> Element<'a> {
         struct DisplayElement<A, B> {
@@ -157,19 +153,19 @@ impl<'a> Element<'a> {
         }
     }
 
-    pub fn one_new<A:Display+'a>(a:A)->Element<'a>{
-        Element::new(a,"")
+    pub fn one_new<A: Display + 'a>(a: A) -> Element<'a> {
+        Element::new(a, "")
     }
 
     /// Move equivalent of `append`
-    pub fn appendm<K:Elem+'a>(mut self,b:K) -> Self {
+    pub fn appendm<K: Elem + 'a>(mut self, b: K) -> Self {
         self.append(b);
         self
     }
 
     /// Append an element. The passed element will be inserted between
     /// the first and second sections of the current element.
-    pub fn append<K:Elem+'a>(&mut self, b: K) -> &mut Self {
+    pub fn append<K: Elem + 'a>(&mut self, b: K) -> &mut Self {
         let mut a = InnerElem::new(Empty);
         core::mem::swap(&mut a, &mut self.inner);
         let e = ElementWrapper { a, b };
@@ -178,11 +174,11 @@ impl<'a> Element<'a> {
         self
     }
 
-    pub fn display(&self)->DisplayableElement{
+    pub fn display(&self) -> DisplayableElement {
         DisplayableElement(self)
     }
 
-    pub fn displaym(self)->OwnedDisplayableElement<'a>{
+    pub fn displaym(self) -> OwnedDisplayableElement<'a> {
         OwnedDisplayableElement(self)
     }
 }
@@ -335,7 +331,9 @@ pub struct AttrBuilder<'a> {
 impl<'a> AttrBuilder<'a> {
     /// Create a `AttrBuilder`
     fn new() -> Self {
-        AttrBuilder { inner: Element::one_new("") }
+        AttrBuilder {
+            inner: Element::one_new(""),
+        }
     }
     /// Add one whole attribute
     pub fn attr_whole(&mut self, a: impl Display + 'a) -> &mut Self {
@@ -363,20 +361,18 @@ impl<'a> PathBuilder<'a> {
     /// Create a `PathBuilder`
     fn new() -> Self {
         PathBuilder {
-            inner: Element::one_new("d=\""),
+            inner: Element::one_new(""),
         }
     }
 
     /// Add one path command.
     pub fn add<F: fmt::Display + 'a>(&mut self, val: PathCommand<F>) -> &mut Self {
-        self.inner
-            .append(moveable_format(move |f| val.write(f)));
+        self.inner.append(moveable_format(move |f| val.write(f)));
         self
     }
 
     /// Finish creating a path.
     pub fn build(&mut self) -> Path<'a> {
-        self.inner.append("\"");
         let mut k = Element::one_new("");
         core::mem::swap(&mut k, &mut self.inner);
         Path { inner: k }
@@ -402,7 +398,7 @@ impl<'a> PointsBuilder<'a> {
     /// Create a `PointsBuilder`
     fn new() -> Self {
         PointsBuilder {
-            inner: Element::one_new("points=\""),
+            inner: Element::one_new(""),
         }
     }
 
@@ -414,7 +410,6 @@ impl<'a> PointsBuilder<'a> {
 
     /// Finish creating the point list.
     pub fn build(&mut self) -> Points<'a> {
-        self.inner.append("\"");
         let mut k = Element::one_new("");
         core::mem::swap(&mut k, &mut self.inner);
         Points { inner: k }
@@ -458,24 +453,81 @@ pub fn attr_builder<'a>() -> AttrBuilder<'a> {
     AttrBuilder::new()
 }
 
-/// Create an element
-#[macro_export]
-macro_rules! elem {
-    ($a:tt, $b:expr) => {
-        $crate::Element::new(
-            $crate::formatm!(concat!("<", $a, " {}>"), $b),
-            concat!("</", $a, ">"),
-        );
-    };
-    ($a:tt) => {
-        $crate::Element::new(concat!("<", $a, ">"), concat!("</", $a, ">"));
-    };
+pub fn one_attr<'a>(a: impl fmt::Display + 'a, b: impl fmt::Display + 'a) -> Attr<'a> {
+    AttrBuilder::new().attr(a, b).build()
 }
 
 /// Create a single tag element
 #[macro_export]
 macro_rules! single {
-    ($a:tt, $b:expr) => {
-        $crate::Element::new($crate::formatm!(concat!("<", $a, " {}/>"), $b), "");
-    };
+    ($a:tt)=>(
+        $crate::Element::new(concat!("<", $a, "/>"), "")
+    );
+    ($a:tt, $($x:expr),+) => (
+        {
+
+            let mut attrs = $crate::attr_builder();
+            $(
+                attrs.attr($x.0,$x.1);
+            )*
+            let res=attrs.build();
+            $crate::Element::new($crate::formatm!(concat!("<", $a, " {}/>"), res), "")
+
+        }
+    )
+}
+
+#[macro_export]
+macro_rules! elem {
+    ($a:tt)=>(
+        $crate::Element::new(
+            concat!("<", $a, ">"),
+            concat!("</", $a, ">"),
+        )
+    );
+    ($a:tt, $($x:expr),*) => (
+        {
+
+            let mut attrs = $crate::attr_builder();
+            $(
+                attrs.attr($x.0,$x.1);
+            )*
+            let res=attrs.build();
+            $crate::Element::new(
+                $crate::formatm!(concat!("<", $a, " {}>"), res),
+                concat!("</", $a, ">"),
+            )
+
+        }
+    )
+}
+
+#[macro_export]
+macro_rules! path {
+    ($($x:expr),*) => (
+        {
+
+            let mut path = $crate::path_builder();
+            $(
+                path.add($x);
+            )*
+            path.build()
+
+        }
+    )
+}
+
+#[macro_export]
+macro_rules! points {
+    ($($x:expr),*) => (
+        {
+
+            let mut points = $crate::points_builder();
+            $(
+                points.add($x.0,$x.1);
+            )*
+            points.build()
+
+        }
+    )
 }

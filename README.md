@@ -39,7 +39,7 @@ fn main() {
 
     svg.append(elem!("style").appendm(".test{fill:none;stroke:white;stroke-width:3}"));
 
-    let mut g = elem!("g", attr_builder().attr("class", "test").build());
+    let mut g = elem!("g", tagger::one_attr("class", "test"));
     for r in (0..50).step_by(10) {
         g.append(single!(
             "circle",

@@ -1,4 +1,3 @@
-use tagger::attr_builder;
 use tagger::prelude::*;
 
 fn main() {
@@ -7,39 +6,28 @@ fn main() {
 
     let mut svg = elem!(
         "svg",
-        attr_builder()
-            .attr("xmlns", "http://www.w3.org/2000/svg")
-            .attr("viewBox", formatm!("0 0 {} {}", width, height))
-            .build()
+        ("xmlns", "http://www.w3.org/2000/svg"),
+        ("viewBox", formatm!("0 0 {} {}", width, height))
     );
 
-    let rect_attr = attr_builder()
-        .attr("x1", 0)
-        .attr("y1", 0)
-        .attr("rx", 20)
-        .attr("ry", 20)
-        .attr("width", width)
-        .attr("height", height)
-        .attr("style", "fill:blue")
-        .build();
-
-    svg.append(single!("rect", rect_attr));
+    svg.append(single!(
+        "rect",
+        ("x1", 0),
+        ("y1", 0),
+        ("rx", 20),
+        ("ry", 20),
+        ("width", width),
+        ("height", height),
+        ("style", "fill:blue")
+    ));
 
     svg.append(elem!("style").appendm(".test{fill:none;stroke:white;stroke-width:3}"));
 
-    let mut g = elem!("g", attr_builder().attr("class", "test").build());
+    let mut g = elem!("g", ("class", "test"));
     for r in (0..50).step_by(10) {
-        g.append(single!(
-            "circle",
-            attr_builder()
-                .attr("cx", 50.0)
-                .attr("cy", 50.0)
-                .attr("r", r)
-                .build()
-        ));
+        g.append(single!("circle", ("cx", 50.0), ("cy", 50.0), ("r", r)));
     }
     svg.append(g);
-
 
     println!("{}", svg.display());
 }
