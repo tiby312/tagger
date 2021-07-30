@@ -3,7 +3,7 @@ use tagger::prelude::*;
 fn main() {
     let mut root = tagger::Element::one_new("<!DOCTYPE html>");
 
-    let style = elem!("style").appendm(
+    root.append(elem!("style").appendm(
         "table, th, td {
             border: 1px solid black;
             border-collapse: collapse;
@@ -13,11 +13,9 @@ fn main() {
               from {background-color: red;}
               to {background-color: blue;}
           }",
-    );
+    ));
 
-    root.append(style);
-
-    let table = {
+    root.append({
         let mut table = elem!("table", ("style", formatm!("width:{}%", 100)));
 
         for i in 0..20 {
@@ -32,9 +30,7 @@ fn main() {
             table.append(tr);
         }
         table
-    };
-
-    root.append(table);
+    });
 
     println!("{}", root.display());
 }
