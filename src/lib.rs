@@ -15,6 +15,7 @@ mod test_readme {
 /// The tagger prelude
 pub mod prelude {
     pub use crate::element;
+    pub use crate::level;
     pub use crate::path;
     pub use crate::points;
     pub use crate::single_element;
@@ -245,6 +246,14 @@ macro_rules! single_element {
 
         }
     )
+}
+
+#[macro_export]
+macro_rules! level {
+    ($w:expr,$c:expr) => {{
+        use std::fmt::Write;
+        $w.build($c)
+    }};
 }
 
 ///
