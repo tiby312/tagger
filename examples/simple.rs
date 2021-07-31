@@ -29,7 +29,7 @@ fn main() -> std::fmt::Result {
         element!(w, "style")
             .build(|w| write!(w, "{}", ".test{fill:none;stroke:white;stroke-width:3}"))?;
 
-        element!(w, "g",("class","test")).build(|w| {
+        element!(w, "g", ("class", "test")).build(|w| {
             for r in (0..50).step_by(10) {
                 single_element!(w, "circle", ("cx", 50.0), ("cy", 50.0), ("r", r));
             }

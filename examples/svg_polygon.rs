@@ -1,5 +1,5 @@
 use tagger::prelude::*;
-fn main() ->std::fmt::Result{
+fn main() -> std::fmt::Result {
     let width = 500.0;
     let height = 400.0;
 
@@ -10,7 +10,8 @@ fn main() ->std::fmt::Result{
         "svg",
         ("xmlns", "http://www.w3.org/2000/svg"),
         ("viewBox", format_args!("0 0 {} {}", width, height))
-    ).build(|w|{
+    )
+    .build(|w| {
         single_element!(
             w,
             "polygon",

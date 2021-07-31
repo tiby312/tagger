@@ -15,11 +15,10 @@ mod test_readme {
 /// The tagger prelude
 pub mod prelude {
     pub use crate::element;
-    pub use crate::single_element;
     pub use crate::path;
     pub use crate::points;
+    pub use crate::single_element;
 }
-
 
 ///
 /// Construct and Write a SVG path's data.
@@ -201,21 +200,18 @@ pub fn moveable_format(func: impl Fn(&mut fmt::Formatter) -> fmt::Result) -> imp
     Foo(func)
 }
 
-
-
+///
+/// Returned by `element!`, this struct is used to complete the element.
+///
 #[must_use]
 pub struct Connector<'a, T> {
     pub writer: &'a mut T,
     pub inner: &'a str,
 }
 impl<'a, T: fmt::Write> Connector<'a, T> {
-    
     #[must_use]
-    pub fn new(writer:&'a mut T,inner:&'a str)->Self{
-        Connector{
-            writer,
-            inner
-        }
+    pub fn new(writer: &'a mut T, inner: &'a str) -> Self {
+        Connector { writer, inner }
     }
     pub fn build(mut self, a: impl FnOnce(&mut T) -> fmt::Result) -> fmt::Result {
         a(&mut self.writer)?;
@@ -223,6 +219,9 @@ impl<'a, T: fmt::Write> Connector<'a, T> {
     }
 }
 
+///
+/// Macro to build an element without an end tag.
+///
 #[macro_export]
 macro_rules! single_element {
     ($w:expr,$a:tt ) => (
@@ -248,8 +247,9 @@ macro_rules! single_element {
     )
 }
 
-
-
+///
+/// Macro to build an element.
+///
 #[macro_export]
 macro_rules! element {
     ($w:expr,$a:tt) => (
@@ -279,7 +279,9 @@ macro_rules! element {
     )
 }
 
-
+///
+/// Macro to build a path.
+///
 #[macro_export]
 macro_rules! path {
     ($($x:expr),* ) => (
@@ -296,7 +298,9 @@ macro_rules! path {
     )
 }
 
-
+///
+/// Macro to build points.
+///
 #[macro_export]
 macro_rules! points {
     ($($x:expr),+ ) => (
@@ -313,52 +317,68 @@ macro_rules! points {
     )
 }
 
+///
+/// Build a path.
+///
 pub struct PathBuilder<T> {
     writer: T,
 }
-impl<T:fmt::Write> PathBuilder<T> {
+impl<T: fmt::Write> PathBuilder<T> {
     pub fn add(&mut self, command: crate::PathCommand<impl fmt::Display>) -> fmt::Result {
         command.write(&mut self.writer)
     }
 }
-pub fn path(a: impl Fn(&mut PathBuilder<&mut fmt::Formatter>)->fmt::Result) -> impl fmt::Display {
-    moveable_format(move |writer|{
-        let mut p=PathBuilder{writer};
+
+///
+/// BUild a path.
+///
+pub fn path(a: impl Fn(&mut PathBuilder<&mut fmt::Formatter>) -> fmt::Result) -> impl fmt::Display {
+    moveable_format(move |writer| {
+        let mut p = PathBuilder { writer };
         a(&mut p)
     })
 }
 
-
+///
+/// Build up a list of points.
+///
 pub struct PointsBuilder<T> {
     writer: T,
 }
-impl<T:fmt::Write> PointsBuilder<T> {
-    pub fn add(&mut self, x:impl fmt::Display,y:impl fmt::Display) -> fmt::Result {
-        write!(self.writer,"{},{} ",x,y)
+impl<T: fmt::Write> PointsBuilder<T> {
+    pub fn add(&mut self, x: impl fmt::Display, y: impl fmt::Display) -> fmt::Result {
+        write!(self.writer, "{},{} ", x, y)
     }
 }
-pub fn points(a: impl Fn(&mut PointsBuilder<&mut fmt::Formatter>)->fmt::Result) -> impl fmt::Display {
-    moveable_format(move |writer|{
-        let mut p=PointsBuilder{writer};
+///
+/// Build up a list of points.
+///
+pub fn points(
+    a: impl Fn(&mut PointsBuilder<&mut fmt::Formatter>) -> fmt::Result,
+) -> impl fmt::Display {
+    moveable_format(move |writer| {
+        let mut p = PointsBuilder { writer };
         a(&mut p)
     })
 }
 
-
-
-
+///
+/// Used to wrap a `std::io::Write` to have `std::fmt::Write`.
+/// The underlying error can be extracted through the error field.
+///
 pub struct Adaptor<T> {
     pub inner: T,
     pub error: Result<(), std::io::Error>,
 }
 
-///Update a std::io::Write to be a std::fmt::Write
+///Update a `std::io::Write` to be a `std::fmt::Write`
 pub fn upgrade_write<T: std::io::Write>(inner: T) -> Adaptor<T> {
     Adaptor {
         inner,
         error: Ok(()),
     }
 }
+
 impl<T: std::io::Write> std::fmt::Write for Adaptor<T> {
     fn write_str(&mut self, s: &str) -> std::fmt::Result {
         match self.inner.write_all(s.as_bytes()) {

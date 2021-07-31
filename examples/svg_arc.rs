@@ -22,7 +22,7 @@ fn main() -> std::fmt::Result {
             ("stroke-width", 2),
             ("fill", "green"),
             ("fill-opacity", 0.5),
-            ("d", path!(M(200, 120), Q(300, 50, 400, 120), T(500, 120) ))
+            ("d", path!(M(200, 120), Q(300, 50, 400, 120), T(500, 120)))
         );
 
         single_element!(
