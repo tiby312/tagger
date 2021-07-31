@@ -1,33 +1,39 @@
 use tagger::prelude::*;
 
-fn main() {
+fn main() -> std::fmt::Result {
+    use std::fmt::Write;
+
     let width = 100.0;
     let height = 100.0;
+    let w = &mut tagger::upgrade_write(std::io::stdout());
 
-    let mut svg = elem!(
+    element!(
+        w,
         "svg",
         ("xmlns", "http://www.w3.org/2000/svg"),
-        ("viewBox", formatm!("0 0 {} {}", width, height))
-    );
+        ("viewBox", format_args!("0 0 {} {}", width, height))
+    )
+    .build(|w| {
+        single_element!(
+            w,
+            "rect",
+            ("x1", 0),
+            ("y1", 0),
+            ("rx", 20),
+            ("ry", 20),
+            ("width", width),
+            ("height", height),
+            ("style", "fill:blue")
+        );
 
-    svg.append(single!(
-        "rect",
-        ("x1", 0),
-        ("y1", 0),
-        ("rx", 20),
-        ("ry", 20),
-        ("width", width),
-        ("height", height),
-        ("style", "fill:blue")
-    ));
+        element!(w, "style")
+            .build(|w| write!(w, "{}", ".test{fill:none;stroke:white;stroke-width:3}"))?;
 
-    svg.append(elem!("style").appendm(".test{fill:none;stroke:white;stroke-width:3}"));
-
-    let mut g = elem!("g", ("class", "test"));
-    for r in (0..50).step_by(10) {
-        g.append(single!("circle", ("cx", 50.0), ("cy", 50.0), ("r", r)));
-    }
-    svg.append(g);
-
-    println!("{}", svg.display());
+        element!(w, "g").build(|w| {
+            for r in (0..50).step_by(10) {
+                single_element!(w, "circle", ("cx", 50.0), ("cy", 50.0), ("r", r));
+            }
+            Ok(())
+        })
+    })
 }

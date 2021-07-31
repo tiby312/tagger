@@ -1,36 +1,33 @@
 use tagger::prelude::*;
 
-fn main() {
-    let mut root = tagger::Element::one_new("<!DOCTYPE html>");
+fn main() -> std::fmt::Result {
+    use std::fmt::Write;
 
-    root.append(elem!("style").appendm(
-        "table, th, td {
-            border: 1px solid black;
-            border-collapse: collapse;
-            animation: mymove 5s infinite;
-          }
-          @keyframes mymove {
-              from {background-color: red;}
-              to {background-color: blue;}
-          }",
-    ));
+    let w = &mut tagger::upgrade_write(std::io::stdout());
 
-    root.append({
-        let mut table = elem!("table", ("style", formatm!("width:{}%", 100)));
+    write!(w, "{}", "<!DOCTYPE html>")?;
+    element!(w, "style").build(|w| {
+        write!(
+            w,
+            "{}",
+            "table, th, td {
+        border: 1px solid black;
+        border-collapse: collapse;
+        animation: mymove 5s infinite;
+      }
+      @keyframes mymove {
+          from {background-color: red;}
+          to {background-color: blue;}
+      }"
+        )
+    })?;
 
+    element!(w, "table", ("style", format_args!("width:{}%", 100))).build(|w| {
         for i in 0..20 {
-            let mut tr = elem!("tr");
-
-            tr.append(elem!("th").appendm(formatm!("Hay {}:1", i)));
-
-            tr.append(elem!("th").appendm(formatm!("Hay {}:2", i)));
-
-            tr.append(elem!("th").appendm(formatm!("Hay {}:3", i)));
-
-            table.append(tr);
+            element!(w, "tr").build(|w| element!(w, "th").build(|w| write!(w, "Hay {}:1", i)))?;
+            element!(w, "tr").build(|w| element!(w, "th").build(|w| write!(w, "Hay {}:2", i)))?;
+            element!(w, "tr").build(|w| element!(w, "th").build(|w| write!(w, "Hay {}:3", i)))?;
         }
-        table
-    });
-
-    println!("{}", root.display());
+        Ok(())
+    })
 }
