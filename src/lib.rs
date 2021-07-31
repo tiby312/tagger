@@ -17,6 +17,7 @@ pub mod prelude {
     pub use crate::element;
     pub use crate::single_element;
     pub use crate::path;
+    pub use crate::points;
 }
 
 
@@ -202,12 +203,20 @@ pub fn moveable_format(func: impl Fn(&mut fmt::Formatter) -> fmt::Result) -> imp
 
 
 
-
+#[must_use]
 pub struct Connector<'a, T> {
     pub writer: &'a mut T,
     pub inner: &'a str,
 }
 impl<'a, T: fmt::Write> Connector<'a, T> {
+    
+    #[must_use]
+    pub fn new(writer:&'a mut T,inner:&'a str)->Self{
+        Connector{
+            writer,
+            inner
+        }
+    }
     pub fn build(mut self, a: impl FnOnce(&mut T) -> fmt::Result) -> fmt::Result {
         a(&mut self.writer)?;
         write!(self.writer, "</{}>", self.inner)
@@ -239,6 +248,8 @@ macro_rules! single_element {
     )
 }
 
+
+
 #[macro_export]
 macro_rules! element {
     ($w:expr,$a:tt) => (
@@ -248,7 +259,7 @@ macro_rules! element {
 
             write!($w,">")?;
 
-            $crate::Connector{writer:$w,inner:$a}
+            $crate::Connector::new($w,$a)
 
         }
     );
@@ -262,7 +273,7 @@ macro_rules! element {
 
             write!($w,">")?;
 
-            $crate::Connector{writer:$w,inner:$a}
+            $crate::Connector::new($w,$a)
 
         }
     )
@@ -285,6 +296,23 @@ macro_rules! path {
     )
 }
 
+
+#[macro_export]
+macro_rules! points {
+    ($($x:expr),+ ) => (
+        {
+            use std::fmt::Write;
+            points(|b|{
+                $(
+                    b.add($x.0,$x.1)?;
+                )*
+                Ok(())
+            })
+
+        }
+    )
+}
+
 pub struct PathBuilder<T> {
     writer: T,
 }
@@ -299,6 +327,25 @@ pub fn path(a: impl Fn(&mut PathBuilder<&mut fmt::Formatter>)->fmt::Result) -> i
         a(&mut p)
     })
 }
+
+
+pub struct PointsBuilder<T> {
+    writer: T,
+}
+impl<T:fmt::Write> PointsBuilder<T> {
+    pub fn add(&mut self, x:impl fmt::Display,y:impl fmt::Display) -> fmt::Result {
+        write!(self.writer,"{},{} ",x,y)
+    }
+}
+pub fn points(a: impl Fn(&mut PointsBuilder<&mut fmt::Formatter>)->fmt::Result) -> impl fmt::Display {
+    moveable_format(move |writer|{
+        let mut p=PointsBuilder{writer};
+        a(&mut p)
+    })
+}
+
+
+
 
 pub struct Adaptor<T> {
     pub inner: T,

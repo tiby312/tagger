@@ -11,7 +11,7 @@ fn main() ->std::fmt::Result{
         ("xmlns", "http://www.w3.org/2000/svg"),
         ("viewBox", format_args!("0 0 {} {}", width, height))
     ).build(|w|{
-        element!(
+        single_element!(
             w,
             "polygon",
             ("stroke", "black"),
@@ -22,6 +22,7 @@ fn main() ->std::fmt::Result{
                 "points",
                 points!((100, 100), (200, 100), (300, 300), (100, 200))
             )
-        )
+        );
+        Ok(())
     })
 }
