@@ -15,7 +15,6 @@ mod test_readme {
 /// The tagger prelude
 pub mod prelude {
     pub use crate::element;
-    pub use crate::level;
     pub use crate::path;
     pub use crate::points;
     pub use crate::single_element;
@@ -216,7 +215,7 @@ impl<'a, T: fmt::Write> Connector<'a, T> {
     }
     pub fn build(mut self, a: impl FnOnce(&mut T) -> fmt::Result) -> fmt::Result {
         a(&mut self.writer)?;
-        write!(self.writer, "</{}>", self.inner)
+        write!(self.writer, "{}", self.inner)
     }
 }
 
@@ -248,31 +247,21 @@ macro_rules! single_element {
     )
 }
 
-#[macro_export]
-macro_rules! level {
-    ($w:expr,$c:expr) => {{
-        use std::fmt::Write;
-        $w.build($c)
-    }};
-}
-
 ///
 /// Macro to build an element.
 ///
 #[macro_export]
 macro_rules! element {
-    ($w:expr,$a:tt) => (
+    ($w:expr,$a:expr) => (
         {
             use std::fmt::Write;
-            write!($w,concat!("<",$a ))?;
+            write!($w,concat!("<",$a,">" ))?;
 
-            write!($w,">")?;
-
-            $crate::Connector::new($w,$a)
+            $crate::Connector::new($w,concat!("</",$a,">"))
 
         }
     );
-    ($w:expr,$a:tt,$($x:expr),* ) => (
+    ($w:expr,$a:expr,$($x:expr),* ) => (
         {
             use std::fmt::Write;
             write!($w,concat!("<",$a ))?;
@@ -282,7 +271,7 @@ macro_rules! element {
 
             write!($w,">")?;
 
-            $crate::Connector::new($w,$a)
+            $crate::Connector::new($w,concat!("</",$a,">"))
 
         }
     )
