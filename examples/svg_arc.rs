@@ -16,9 +16,9 @@ fn main() {
                 .attr("fill", "green")
                 .attr("fill-opacity", 0.5)
                 .path(|p| {
-                    p.add(M(200, 120))
-                        .add(Q(300, 50, 400, 120))
-                        .add(T(500, 120));
+                    p.put(M(200, 120))
+                        .put(Q(300, 50, 400, 120))
+                        .put(T(500, 120));
                 });
         });
 
@@ -28,10 +28,10 @@ fn main() {
                 .attr("fill", "blue")
                 .attr("fill-opacity", 0.5)
                 .path(|p| {
-                    p.add(M(300, 200))
-                        .add(H_(-150))
-                        .add(A_(150, 150, 0, 1, 0, 150, -150))
-                        .add(Z(""));
+                    p.put(M(300, 200))
+                        .put(H_(-150))
+                        .put(A_(150, 150, 0, 1, 0, 150, -150))
+                        .put(Z(""));
                 });
         });
     });

@@ -3,10 +3,10 @@ use tagger::no_attr;
 fn main() {
     let mut w = tagger::from_io(std::io::stdout());
 
-    w.add_raw("<!DOCTYPE html>");
+    w.put_raw("<!DOCTYPE html>");
 
     w.elem("style", no_attr()).build(|w| {
-        w.add_raw(
+        w.put_raw(
             "table, th, td {
             border: 1px solid black;
             border-collapse: collapse;
@@ -26,13 +26,13 @@ fn main() {
         for i in 0..20 {
             w.elem("tr", no_attr()).build(|w| {
                 w.elem("th", no_attr()).build(|w| {
-                    w.add_raw(format_args!("Hay {}:1", i));
+                    w.put_raw(format_args!("Hay {}:1", i));
                 });
                 w.elem("th", no_attr()).build(|w| {
-                    w.add_raw(format_args!("Hay {}:2", i));
+                    w.put_raw(format_args!("Hay {}:2", i));
                 });
                 w.elem("th", no_attr()).build(|w| {
-                    w.add_raw(format_args!("Hay {}:3", i));
+                    w.put_raw(format_args!("Hay {}:3", i));
                 });
             });
         }

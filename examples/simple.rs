@@ -20,7 +20,7 @@ fn main() {
         });
 
         w.elem("style", tagger::no_attr()).build(|w| {
-            w.add_raw(".test{fill:none;stroke:white;stroke-width:3}");
+            w.put_raw(".test{fill:none;stroke:white;stroke-width:3}");
         });
 
         w.elem("g", |d| {

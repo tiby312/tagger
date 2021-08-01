@@ -138,7 +138,7 @@ pub struct PathBuilder<'a, T> {
     writer: &'a mut T,
 }
 impl<'a, T: fmt::Write> PathBuilder<'a, T> {
-    pub fn add(&mut self, command: crate::PathCommand<impl fmt::Display>) -> &mut Self {
+    pub fn put(&mut self, command: crate::PathCommand<impl fmt::Display>) -> &mut Self {
         command.write(&mut self.writer).unwrap();
         self
     }
@@ -151,7 +151,7 @@ pub struct PointsBuilder<'a, T> {
     writer: &'a mut T,
 }
 impl<'a, T: fmt::Write> PointsBuilder<'a, T> {
-    pub fn add(&mut self, x: impl fmt::Display, y: impl fmt::Display) -> &mut Self {
+    pub fn put(&mut self, x: impl fmt::Display, y: impl fmt::Display) -> &mut Self {
         write!(self.writer, "{},{} ", x, y).unwrap();
         self
     }
@@ -229,7 +229,7 @@ impl<'a, T: fmt::Write> AttrWriter<'a, T> {
     pub fn writer(&mut self) -> &mut T {
         &mut self.0
     }
-    pub fn add_raw(&mut self, a: impl fmt::Display) -> &mut Self {
+    pub fn put_raw(&mut self, a: impl fmt::Display) -> &mut Self {
         write!(self.0, " {}", a).unwrap();
         self
     }
@@ -258,7 +258,7 @@ impl<T: fmt::Write> ElemWriter<T> {
     pub fn writer(&mut self) -> &mut T {
         &mut self.0
     }
-    pub fn add_raw(&mut self, a: impl fmt::Display) -> &mut Self {
+    pub fn put_raw(&mut self, a: impl fmt::Display) -> &mut Self {
         write!(self.0, " {}", a).unwrap();
         self
     }

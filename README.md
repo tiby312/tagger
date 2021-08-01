@@ -31,8 +31,8 @@ fn main() {
                 .attr("style", "fill:blue");
         });
 
-        w.elem("style", |_| {}).build(|w| {
-            w.add_raw(".test{fill:none;stroke:white;stroke-width:3}");
+        w.elem("style", tagger::no_attr()).build(|w| {
+            w.put_raw(".test{fill:none;stroke:white;stroke-width:3}");
         });
 
         w.elem("g", |d| {

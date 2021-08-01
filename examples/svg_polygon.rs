@@ -15,7 +15,7 @@ fn main() {
                 .attr("fill", "green")
                 .attr("fill-opacity", 0.5)
                 .points(|p| {
-                    p.add(100, 100).add(200, 100).add(300, 300).add(100, 200);
+                    p.put(100, 100).put(200, 100).put(300, 300).put(100, 200);
                 });
         });
     });
