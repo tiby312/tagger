@@ -317,6 +317,7 @@ impl<T: std::io::Write> std::fmt::Write for Adaptor<T> {
     }
 }
 
+#[must_use]
 pub struct Element<T: fmt::Write, D: fmt::Display> {
     writer: T,
     tag: D,
