@@ -5,11 +5,13 @@ fn main() -> std::fmt::Result {
 
     let w = &mut tagger::upgrade_write(std::io::stdout());
 
-    write!(w, "{}", "<!DOCTYPE html>")?;
+    let mut w = tagger::ElemWriter::new(w);
 
-    element!(w, "style").build(|w| {
+    write!(w.writer(), "{}", "<!DOCTYPE html>")?;
+
+    element!(w, "style")?.build(|w| {
         write!(
-            w,
+            w.writer(),
             "{}",
             "table, th, td {
         border: 1px solid black;
@@ -23,12 +25,12 @@ fn main() -> std::fmt::Result {
         )
     })?;
 
-    element!(w, "table", ("style", format_args!("width:{}%", 100))).build(|w| {
+    element!(w, "table", ("style", format_args!("width:{}%", 100)))?.build(|w| {
         for i in 0..20 {
-            element!(w, "tr").build(|w| {
-                element!(w, "th").build(|w| write!(w, "Hay {}:1", i))?;
-                element!(w, "th").build(|w| write!(w, "Hay {}:2", i))?;
-                element!(w, "th").build(|w| write!(w, "Hay {}:3", i))
+            element!(w, "tr")?.build(|w| {
+                element!(w, "th")?.build(|w| write!(w.writer(), "Hay {}:1", i))?;
+                element!(w, "th")?.build(|w| write!(w.writer(), "Hay {}:2", i))?;
+                element!(w, "th")?.build(|w| write!(w.writer(), "Hay {}:3", i))
             })?;
         }
         Ok(())

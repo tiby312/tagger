@@ -1,48 +1,41 @@
-use tagger::prelude::*;
 
-fn main() -> std::fmt::Result {
+fn main() {
     let width = 500.0;
     let height = 400.0;
 
-    let w = &mut tagger::upgrade_write(std::io::stdout());
+    let mut w= tagger::from_io(std::io::stdout());
 
-    element!(
-        w,
-        "svg",
-        ("xmlns", "http://www.w3.org/2000/svg"),
-        ("viewBox", format_args!("0 0 {} {}", width, height))
-    )
+    w.elem("svg", |a| {
+        a.attr("xmlns", "http://www.w3.org/2000/svg");
+        a.attr("viewBox", format_args!("0 0 {} {}", width, height))
+    })
     .build(|w| {
         use tagger::PathCommand::*;
+        w.single("path", |a| {
+            a.attr("stroke", "black");
+            a.attr("stroke-width", 2);
+            a.attr("fill", "green");
+            a.attr("fill-opacity", 0.5);
 
-        single_element!(
-            w,
-            "path",
-            ("stroke", "black"),
-            ("stroke-width", 2),
-            ("fill", "green"),
-            ("fill-opacity", 0.5),
-            ("d", path!(M(200, 120), Q(300, 50, 400, 120), T(500, 120)))
-        );
+            a.path(|p|{
+                p.add(M(200, 120));
+                p.add(Q(300, 50, 400, 120));
+                p.add(T(500, 120))
+            })
+        });
 
-        single_element!(
-            w,
-            "path",
-            ("stroke", "black"),
-            ("stroke-width", 2),
-            ("fill", "blue"),
-            ("fill-opacity", 0.5),
-            (
-                "d",
-                path!(
-                    M(300, 200),
-                    H_(-150),
-                    A_(150, 150, 0, 1, 0, 150, -150),
-                    Z("")
-                )
-            )
-        );
+        w.single("path", |a| {
+            a.attr("stroke", "black");
+            a.attr("stroke-width", 2);
+            a.attr("fill", "blue");
+            a.attr("fill-opacity", 0.5);
 
-        Ok(())
+            a.path(|p|{
+                p.add(M(300, 200));
+                p.add(H_(-150));
+                p.add(A_(150, 150, 0, 1, 0, 150, -150));
+                p.add(Z(""))
+            })
+        })
     })
 }

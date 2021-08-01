@@ -12,13 +12,6 @@ mod test_readme {
     external_doc_test!(include_str!("../README.md"));
 }
 
-/// The tagger prelude
-pub mod prelude {
-    pub use crate::element;
-    pub use crate::path;
-    pub use crate::points;
-    pub use crate::single_element;
-}
 
 ///
 /// Construct and Write a SVG path's data.
@@ -139,66 +132,6 @@ impl<F: fmt::Display> PathCommand<F> {
     }
 }
 
-/*
-/// The finished product of [`PointsBuilder`]
-pub struct Points<'a> {
-    inner: Element<'a>,
-}
-
-impl<'a> Display for Points<'a> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.inner.display().fmt(f)
-    }
-}
-
-/// Create the attribute for a svg polyline or polygon.
-pub struct PointsBuilder<'a> {
-    inner: Element<'a>,
-}
-impl<'a> PointsBuilder<'a> {
-    /// Create a `PointsBuilder`
-    fn new() -> Self {
-        PointsBuilder {
-            inner: Element::one_new(""),
-        }
-    }
-
-    /// Add one point to the list.
-    pub fn add(&mut self, x: impl fmt::Display + 'a, y: impl fmt::Display + 'a) -> &mut Self {
-        self.inner.append(formatm!("{},{} ", x, y));
-        self
-    }
-
-    /// Finish creating the point list.
-    pub fn build(&mut self) -> Points<'a> {
-        let mut k = Element::one_new("");
-        core::mem::swap(&mut k, &mut self.inner);
-        Points { inner: k }
-    }
-}
-*/
-
-/// Shorthand for `moveable_format(move |w|write!(w,...))`
-/// Similar to `format_args!()` except has a more flexible lifetime.
-#[macro_export]
-macro_rules! formatm {
-    ($($arg:tt)*) => {
-        $crate::moveable_format(move |w| write!(w,$($arg)*))
-    }
-}
-
-/// Convert a moved closure into a impl fmt::Display.
-/// This is useful because std's `format_args!()` macro
-/// has a shorter lifetime.
-pub fn moveable_format(func: impl Fn(&mut fmt::Formatter) -> fmt::Result) -> impl fmt::Display {
-    struct Foo<F>(F);
-    impl<F: Fn(&mut fmt::Formatter) -> fmt::Result> fmt::Display for Foo<F> {
-        fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            (self.0)(formatter)
-        }
-    }
-    Foo(func)
-}
 
 ///
 /// Returned by `element!`, this struct is used to complete the element.
@@ -219,30 +152,25 @@ impl<'a, T: fmt::Write> Connector<'a, T> {
     }
 }
 
+/*
 ///
 /// Macro to build an element without an end tag.
 ///
 #[macro_export]
 macro_rules! single_element {
-    ($w:expr,$a:tt ) => (
+    ($w:expr,$a:expr ) => (
         {
-            use std::fmt::Write;
-            write!($w,concat!("<",$a ))?;
-
-            write!($w,"/>")?;
-
+            $w.single($a,|_|Ok())
         }
     );
     ($w:expr,$a:tt,$($x:expr),* ) => (
         {
-            use std::fmt::Write;
-            write!($w,concat!("<",$a ))?;
-            $(
-                write!($w," {}=\"{}\"",$x.0,$x.1)?;
-            )*
-
-            write!($w,"/>")?;
-
+            $w.single($a,|w|{
+                $(
+                    w.attr($x.0,$x.1)?;
+                )*
+                Ok(())
+            })
         }
     )
 }
@@ -254,38 +182,31 @@ macro_rules! single_element {
 macro_rules! element {
     ($w:expr,$a:expr) => (
         {
-            use std::fmt::Write;
-            write!($w,concat!("<",$a,">" ))?;
-
-            $crate::Connector::new($w,concat!("</",$a,">"))
-
+            $w.elem($a,|_|Ok(()))
         }
     );
     ($w:expr,$a:expr,$($x:expr),* ) => (
         {
-            use std::fmt::Write;
-            write!($w,concat!("<",$a ))?;
-            $(
-                write!($w," {}=\"{}\"",$x.0,$x.1)?;
-            )*
-
-            write!($w,">")?;
-
-            $crate::Connector::new($w,concat!("</",$a,">"))
-
+            $w.elem($a,|w|{
+                $(
+                    w.attr($x.0,$x.1)?;
+                )*
+                Ok(())
+            })
         }
     )
 }
-
+*/
+/*
 ///
 /// Macro to build a path.
 ///
 #[macro_export]
 macro_rules! path {
-    ($($x:expr),* ) => (
+    ($w:expr,$($x:expr),* ) => (
         {
             use std::fmt::Write;
-            path(|b|{
+            $w.path(|b|{
                 $(
                     b.add($x)?;
                 )*
@@ -301,10 +222,10 @@ macro_rules! path {
 ///
 #[macro_export]
 macro_rules! points {
-    ($($x:expr),+ ) => (
+    ($w:expr,$($x:expr),+ ) => (
         {
             use std::fmt::Write;
-            points(|b|{
+            $w.points(|b|{
                 $(
                     b.add($x.0,$x.1)?;
                 )*
@@ -314,6 +235,24 @@ macro_rules! points {
         }
     )
 }
+*/
+
+/*
+///
+/// Macro to build points.
+///
+#[macro_export]
+macro_rules! attr {
+    ($w:expr,$($x:expr),+ ) => (
+        {
+            $(
+                $w.attr($x.0,$x.1)?;
+            )*
+
+        }
+    )
+}
+*/
 
 ///
 /// Build a path.
@@ -322,19 +261,9 @@ pub struct PathBuilder<T> {
     writer: T,
 }
 impl<T: fmt::Write> PathBuilder<T> {
-    pub fn add(&mut self, command: crate::PathCommand<impl fmt::Display>) -> fmt::Result {
-        command.write(&mut self.writer)
+    pub fn add(&mut self, command: crate::PathCommand<impl fmt::Display>)  {
+        command.write(&mut self.writer).unwrap()
     }
-}
-
-///
-/// BUild a path.
-///
-pub fn path(a: impl Fn(&mut PathBuilder<&mut fmt::Formatter>) -> fmt::Result) -> impl fmt::Display {
-    moveable_format(move |writer| {
-        let mut p = PathBuilder { writer };
-        a(&mut p)
-    })
 }
 
 ///
@@ -344,20 +273,9 @@ pub struct PointsBuilder<T> {
     writer: T,
 }
 impl<T: fmt::Write> PointsBuilder<T> {
-    pub fn add(&mut self, x: impl fmt::Display, y: impl fmt::Display) -> fmt::Result {
-        write!(self.writer, "{},{} ", x, y)
+    pub fn add(&mut self, x: impl fmt::Display, y: impl fmt::Display) {
+        write!(self.writer, "{},{} ", x, y).unwrap()
     }
-}
-///
-/// Build up a list of points.
-///
-pub fn points(
-    a: impl Fn(&mut PointsBuilder<&mut fmt::Formatter>) -> fmt::Result,
-) -> impl fmt::Display {
-    moveable_format(move |writer| {
-        let mut p = PointsBuilder { writer };
-        a(&mut p)
-    })
 }
 
 ///
@@ -369,8 +287,18 @@ pub struct Adaptor<T> {
     pub error: Result<(), std::io::Error>,
 }
 
+
+pub fn start<T:fmt::Write>(a:T)->ElemWriter<T>{
+    ElemWriter(a)
+}
+
+pub fn from_io<T:std::io::Write>(a:T)->ElemWriter<Adaptor<T>>{
+    ElemWriter(upgrade_write(a))
+}
+
+
 ///Update a `std::io::Write` to be a `std::fmt::Write`
-pub fn upgrade_write<T: std::io::Write>(inner: T) -> Adaptor<T> {
+fn upgrade_write<T: std::io::Write>(inner: T) -> Adaptor<T> {
     Adaptor {
         inner,
         error: Ok(()),
@@ -385,6 +313,87 @@ impl<T: std::io::Write> std::fmt::Write for Adaptor<T> {
                 self.error = Err(e);
                 Err(std::fmt::Error)
             }
+        }
+    }
+}
+
+pub struct Element<T: fmt::Write, D: fmt::Display> {
+    writer: T,
+    tag: D,
+}
+impl<T: fmt::Write, D: fmt::Display> Element<T, D> {
+    pub fn build(
+        mut self,
+        func: impl FnOnce(&mut ElemWriter<&mut T>) ,
+    )  {
+        func(&mut ElemWriter(&mut self.writer));
+        write!(self.writer, "</{}>", self.tag).unwrap()
+    }
+}
+
+pub struct AttrWriter<T: fmt::Write>(T);
+impl<T: fmt::Write> AttrWriter<T> {
+    pub fn attr(&mut self, a: impl fmt::Display, b: impl fmt::Display) {
+        write!(self.0, " {}=\"{}\"", a, b).unwrap()
+    }
+    pub fn writer(&mut self) -> &mut T {
+        &mut self.0
+    }
+    pub fn path(&mut self, a: impl FnOnce(&mut PathBuilder<&mut T>)) {
+        let mut p = PathBuilder {
+            writer: &mut self.0,
+        };
+        write!(p.writer, "{}", "d=\"").unwrap();
+        a(&mut p);
+        write!(p.writer, "{}", "\"").unwrap();
+    }
+    pub fn points(
+        &mut self,
+        a: impl FnOnce(&mut PointsBuilder<&mut T>),
+    )  {
+        let mut p = PointsBuilder {
+            writer: &mut self.0,
+        };
+        write!(p.writer, "{}", "points=\"").unwrap();
+        a(&mut p);
+        write!(p.writer, "{}", "\"").unwrap()
+    }
+}
+
+
+
+pub struct ElemWriter<T: fmt::Write>(T);
+
+impl<T: fmt::Write> ElemWriter<T> {
+    pub fn writer(&mut self) -> &mut T {
+        &mut self.0
+    }
+    pub fn new(a: T) -> Self {
+        ElemWriter(a)
+    }
+    pub fn single<D: fmt::Display>(
+        &mut self,
+        tag: D,
+        func: impl FnOnce(&mut AttrWriter<&mut T>),
+    )  {
+        write!(self.0, "<{} ", tag).unwrap();
+        func(&mut AttrWriter(&mut self.0));
+        write!(self.0, " >").unwrap()
+    }
+    pub fn elem<D: fmt::Display>(
+        &mut self,
+        tag: D,
+        func: impl FnOnce(&mut AttrWriter<&mut T>),
+    ) -> Element<&mut T, D> {
+        write!(self.0, "<{} ", tag).unwrap();
+
+        func(&mut AttrWriter(&mut self.0));
+
+        write!(self.0, " >").unwrap();
+
+        Element {
+            writer: &mut self.0,
+            tag,
         }
     }
 }
