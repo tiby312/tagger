@@ -1,9 +1,11 @@
+use tagger::no_attr;
+
 fn main() {
     let mut w = tagger::from_io(std::io::stdout());
 
     w.add_raw("<!DOCTYPE html>");
 
-    w.elem("style", |_| {}).build(|w| {
+    w.elem("style", no_attr()).build(|w| {
         w.add_raw(
             "table, th, td {
             border: 1px solid black;
@@ -22,14 +24,14 @@ fn main() {
     })
     .build(|w| {
         for i in 0..20 {
-            w.elem("tr", |_| {}).build(|w| {
-                w.elem("th", |_| {}).build(|w| {
+            w.elem("tr", no_attr()).build(|w| {
+                w.elem("th", no_attr()).build(|w| {
                     w.add_raw(format_args!("Hay {}:1", i));
                 });
-                w.elem("th", |_| {}).build(|w| {
+                w.elem("th", no_attr()).build(|w| {
                     w.add_raw(format_args!("Hay {}:2", i));
                 });
-                w.elem("th", |_| {}).build(|w| {
+                w.elem("th", no_attr()).build(|w| {
                     w.add_raw(format_args!("Hay {}:3", i));
                 });
             });

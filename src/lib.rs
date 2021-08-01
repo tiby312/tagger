@@ -287,3 +287,11 @@ impl<T: fmt::Write> ElemWriter<T> {
         ElementBridge { writer: self, tag }
     }
 }
+
+///
+/// Specify no attributes needed.
+/// Equivalent to writing `|_|{}`.
+///
+pub fn no_attr<T>() -> impl FnOnce(&mut AttrWriter<T>) {
+    move |_| {}
+}
