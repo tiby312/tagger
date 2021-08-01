@@ -210,10 +210,10 @@ pub struct ElementBridge<'a, T: fmt::Write, D: fmt::Display> {
     tag: D,
 }
 impl<'a, T: fmt::Write, D: fmt::Display> ElementBridge<'a, T, D> {
-    pub fn build(self, func: impl FnOnce(&mut ElemWriter<T>)) -> &'a mut ElemWriter<T> {
-        func(self.writer);
+    pub fn build<K>(self, func: impl FnOnce(&mut ElemWriter<T>) -> K) -> K {
+        let k = func(self.writer);
         write!(self.writer.0, "</{}>", self.tag).unwrap();
-        self.writer
+        k
     }
 }
 
