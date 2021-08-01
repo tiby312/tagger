@@ -235,16 +235,16 @@ impl<'a, T: fmt::Write> AttrWriter<'a, T> {
     }
     pub fn path(&mut self, a: impl FnOnce(&mut PathBuilder<T>)) -> &mut Self {
         let mut p = PathBuilder { writer: self.0 };
-        write!(p.writer, "{}", " d=\"").unwrap();
+        write!(p.writer, " d=\"").unwrap();
         a(&mut p);
-        write!(p.writer, "{}", "\"").unwrap();
+        write!(p.writer, "\"").unwrap();
         self
     }
     pub fn points(&mut self, a: impl FnOnce(&mut PointsBuilder<T>)) -> &mut Self {
         let mut p = PointsBuilder { writer: self.0 };
-        write!(p.writer, "{}", " points=\"").unwrap();
+        write!(p.writer, " points=\"").unwrap();
         a(&mut p);
-        write!(p.writer, "{}", "\"").unwrap();
+        write!(p.writer, "\"").unwrap();
         self
     }
 }
