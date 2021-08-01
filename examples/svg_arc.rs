@@ -3,7 +3,8 @@ fn main() {
     let width = 500.0;
     let height = 400.0;
 
-    let mut w= tagger::from_io(std::io::stdout());
+    let mut w=tagger::upgrade_write(std::io::stdout());
+    let mut w= tagger::start(&mut w);
 
     w.elem("svg", |a| {
         a.attr("xmlns", "http://www.w3.org/2000/svg");

@@ -257,22 +257,22 @@ macro_rules! attr {
 ///
 /// Build a path.
 ///
-pub struct PathBuilder<T> {
-    writer: T,
+pub struct PathBuilder<'a,T> {
+    writer: &'a mut T,
 }
-impl<T: fmt::Write> PathBuilder<T> {
+impl<'a,T: fmt::Write> PathBuilder<'a,T> {
     pub fn add(&mut self, command: crate::PathCommand<impl fmt::Display>)  {
-        command.write(&mut self.writer).unwrap()
+        command.write(self.writer).unwrap()
     }
 }
 
 ///
 /// Build up a list of points.
 ///
-pub struct PointsBuilder<T> {
-    writer: T,
+pub struct PointsBuilder<'a,T> {
+    writer: &'a mut T,
 }
-impl<T: fmt::Write> PointsBuilder<T> {
+impl<'a,T: fmt::Write> PointsBuilder<'a,T> {
     pub fn add(&mut self, x: impl fmt::Display, y: impl fmt::Display) {
         write!(self.writer, "{},{} ", x, y).unwrap()
     }
@@ -288,17 +288,19 @@ pub struct Adaptor<T> {
 }
 
 
-pub fn start<T:fmt::Write>(a:T)->ElemWriter<T>{
+pub fn start<T:fmt::Write>(a:&mut T)->ElemWriter<T>{
     ElemWriter(a)
 }
 
-pub fn from_io<T:std::io::Write>(a:T)->ElemWriter<Adaptor<T>>{
+/*
+pub fn from_io<T:std::io::Write>(a:&mut T)->ElemWriter<Adaptor<T>>{
     ElemWriter(upgrade_write(a))
 }
+*/
 
 
 ///Update a `std::io::Write` to be a `std::fmt::Write`
-fn upgrade_write<T: std::io::Write>(inner: T) -> Adaptor<T> {
+pub fn upgrade_write<T: std::io::Write>(inner: T) -> Adaptor<T> {
     Adaptor {
         inner,
         error: Ok(()),
@@ -318,31 +320,31 @@ impl<T: std::io::Write> std::fmt::Write for Adaptor<T> {
 }
 
 #[must_use]
-pub struct Element<T: fmt::Write, D: fmt::Display> {
-    writer: T,
+pub struct Element<'a,T: fmt::Write, D: fmt::Display> {
+    writer: &'a mut T,
     tag: D,
 }
-impl<T: fmt::Write, D: fmt::Display> Element<T, D> {
+impl<'a,T: fmt::Write, D: fmt::Display> Element<'a,T, D> {
     pub fn build(
         mut self,
-        func: impl FnOnce(&mut ElemWriter<&mut T>) ,
+        func: impl FnOnce(&mut ElemWriter<T>) ,
     )  {
-        func(&mut ElemWriter(&mut self.writer));
+        func(&mut ElemWriter(self.writer));
         write!(self.writer, "</{}>", self.tag).unwrap()
     }
 }
 
-pub struct AttrWriter<T: fmt::Write>(T);
-impl<T: fmt::Write> AttrWriter<T> {
+pub struct AttrWriter<'a,T: fmt::Write>(&'a mut T);
+impl<'a,T: fmt::Write> AttrWriter<'a,T> {
     pub fn attr(&mut self, a: impl fmt::Display, b: impl fmt::Display) {
         write!(self.0, " {}=\"{}\"", a, b).unwrap()
     }
     pub fn writer(&mut self) -> &mut T {
-        &mut self.0
+        self.0
     }
-    pub fn path(&mut self, a: impl FnOnce(&mut PathBuilder<&mut T>)) {
+    pub fn path(&mut self, a: impl FnOnce(&mut PathBuilder<T>)) {
         let mut p = PathBuilder {
-            writer: &mut self.0,
+            writer: self.0,
         };
         write!(p.writer, "{}", "d=\"").unwrap();
         a(&mut p);
@@ -350,10 +352,10 @@ impl<T: fmt::Write> AttrWriter<T> {
     }
     pub fn points(
         &mut self,
-        a: impl FnOnce(&mut PointsBuilder<&mut T>),
+        a: impl FnOnce(&mut PointsBuilder<T>),
     )  {
         let mut p = PointsBuilder {
-            writer: &mut self.0,
+            writer: self.0,
         };
         write!(p.writer, "{}", "points=\"").unwrap();
         a(&mut p);
@@ -363,37 +365,37 @@ impl<T: fmt::Write> AttrWriter<T> {
 
 
 
-pub struct ElemWriter<T: fmt::Write>(T);
+pub struct ElemWriter<'a,T: fmt::Write>(&'a mut T);
 
-impl<T: fmt::Write> ElemWriter<T> {
+impl<'a,T: fmt::Write> ElemWriter<'a,T> {
     pub fn writer(&mut self) -> &mut T {
-        &mut self.0
+        self.0
     }
-    pub fn new(a: T) -> Self {
+    pub fn new(a: &'a mut T) -> Self {
         ElemWriter(a)
     }
     pub fn single<D: fmt::Display>(
         &mut self,
         tag: D,
-        func: impl FnOnce(&mut AttrWriter<&mut T>),
+        func: impl FnOnce(&mut AttrWriter<T>),
     )  {
         write!(self.0, "<{} ", tag).unwrap();
-        func(&mut AttrWriter(&mut self.0));
+        func(&mut AttrWriter(self.0));
         write!(self.0, " >").unwrap()
     }
     pub fn elem<D: fmt::Display>(
         &mut self,
         tag: D,
-        func: impl FnOnce(&mut AttrWriter<&mut T>),
-    ) -> Element<&mut T, D> {
+        func: impl FnOnce(&mut AttrWriter<T>),
+    ) -> Element<T, D> {
         write!(self.0, "<{} ", tag).unwrap();
 
-        func(&mut AttrWriter(&mut self.0));
+        func(&mut AttrWriter(self.0));
 
         write!(self.0, " >").unwrap();
 
         Element {
-            writer: &mut self.0,
+            writer: self.0,
             tag,
         }
     }
