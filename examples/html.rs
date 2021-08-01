@@ -1,38 +1,38 @@
-use tagger::prelude::*;
+fn main() {
+    let mut w = tagger::from_io(std::io::stdout());
 
-fn main() -> std::fmt::Result {
-    use std::fmt::Write;
+    w.add_raw("<!DOCTYPE html>");
 
-    let w = &mut tagger::upgrade_write(std::io::stdout());
-
-    let mut w = tagger::ElemWriter::new(w);
-
-    write!(w.writer(), "{}", "<!DOCTYPE html>")?;
-
-    element!(w, "style")?.build(|w| {
-        write!(
-            w.writer(),
-            "{}",
+    w.elem("style", |_| {}).build(|w| {
+        w.add_raw(
             "table, th, td {
-        border: 1px solid black;
-        border-collapse: collapse;
-        animation: mymove 5s infinite;
-      }
-      @keyframes mymove {
-          from {background-color: red;}
-          to {background-color: blue;}
-      }"
-        )
-    })?;
+            border: 1px solid black;
+            border-collapse: collapse;
+            animation: mymove 5s infinite;
+          }
+          @keyframes mymove {
+              from {background-color: red;}
+              to {background-color: blue;}
+          }",
+        );
+    });
 
-    element!(w, "table", ("style", format_args!("width:{}%", 100)))?.build(|w| {
-        for i in 0..20 {
-            element!(w, "tr")?.build(|w| {
-                element!(w, "th")?.build(|w| write!(w.writer(), "Hay {}:1", i))?;
-                element!(w, "th")?.build(|w| write!(w.writer(), "Hay {}:2", i))?;
-                element!(w, "th")?.build(|w| write!(w.writer(), "Hay {}:3", i))
-            })?;
-        }
-        Ok(())
+    w.elem("table", |d| {
+        d.attr("style", format_args!("width:{}%", 100));
     })
+    .build(|w| {
+        for i in 0..20 {
+            w.elem("tr", |_| {}).build(|w| {
+                w.elem("th", |_| {}).build(|w| {
+                    w.add_raw(format_args!("Hay {}:1", i));
+                });
+                w.elem("th", |_| {}).build(|w| {
+                    w.add_raw(format_args!("Hay {}:2", i));
+                });
+                w.elem("th", |_| {}).build(|w| {
+                    w.add_raw(format_args!("Hay {}:3", i));
+                });
+            });
+        }
+    });
 }

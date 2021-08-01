@@ -10,45 +10,44 @@ Tagger also provides functionality to build svg paths and polyline attribute dat
 ### Example
 
 ```rust
-use tagger::prelude::*;
-
-fn main() -> std::fmt::Result {
-    use std::fmt::Write;
-
+fn main() {
     let width = 100.0;
     let height = 100.0;
-    let w = &mut tagger::upgrade_write(std::io::stdout());
 
-    element!(
-        w,
-        "svg",
-        ("xmlns", "http://www.w3.org/2000/svg"),
-        ("viewBox", format_args!("0 0 {} {}", width, height))
-    )
-    .build(|w| {
-        single_element!(
-            w,
-            "rect",
-            ("x1", 0),
-            ("y1", 0),
-            ("rx", 20),
-            ("ry", 20),
-            ("width", width),
-            ("height", height),
-            ("style", "fill:blue")
-        );
+    let mut w = tagger::from_io(std::io::stdout());
 
-        element!(w, "style")
-            .build(|w| write!(w, "{}", ".test{fill:none;stroke:white;stroke-width:3}"))?;
-
-        element!(w, "g", ("class", "test")).build(|w| {
-            for r in (0..50).step_by(10) {
-                single_element!(w, "circle", ("cx", 50.0), ("cy", 50.0), ("r", r));
-            }
-            Ok(())
-        })
+    w.elem("svg", |d| {
+        d.attr("xmlns", "http://www.w3.org/2000/svg")
+            .attr("viewBox", format_args!("0 0 {} {}", width, height));
     })
+    .build(|w| {
+        w.single("rect", |d| {
+            d.attr("x1", 0)
+                .attr("y1", 0)
+                .attr("rx", 20)
+                .attr("ry", 20)
+                .attr("width", width)
+                .attr("height", height)
+                .attr("style", "fill:blue");
+        });
+
+        w.elem("style", |_| {}).build(|w| {
+            w.add_raw(".test{fill:none;stroke:white;stroke-width:3}");
+        });
+
+        w.elem("g", |d| {
+            d.attr("class", "test");
+        })
+        .build(|w| {
+            for r in (0..50).step_by(10) {
+                w.single("circle", |w| {
+                    w.attr("cx", 50.0).attr("cy", 50.0).attr("r", r);
+                });
+            }
+        });
+    });
 }
+
 
 ```
 

@@ -1,29 +1,22 @@
-use tagger::prelude::*;
-fn main() -> std::fmt::Result {
+fn main() {
     let width = 500.0;
     let height = 400.0;
 
-    let w = &mut tagger::upgrade_write(std::io::stdout());
+    let mut w = tagger::from_io(std::io::stdout());
 
-    element!(
-        w,
-        "svg",
-        ("xmlns", "http://www.w3.org/2000/svg"),
-        ("viewBox", format_args!("0 0 {} {}", width, height))
-    )
-    .build(|w| {
-        single_element!(
-            w,
-            "polygon",
-            ("stroke", "black"),
-            ("stroke-width", 2),
-            ("fill", "green"),
-            ("fill-opacity", 0.5),
-            (
-                "points",
-                points!((100, 100), (200, 100), (300, 300), (100, 200))
-            )
-        );
-        Ok(())
+    w.elem("svg", |d| {
+        d.attr("xmlns", "http://www.w3.org/2000/svg")
+            .attr("viewBox", format_args!("0 0 {} {}", width, height));
     })
+    .build(|w| {
+        w.single("polygon", |d| {
+            d.attr("stroke", "black")
+                .attr("stroke-width", 2)
+                .attr("fill", "green")
+                .attr("fill-opacity", 0.5)
+                .points(|p| {
+                    p.add(100, 100).add(200, 100).add(300, 300).add(100, 200);
+                });
+        });
+    });
 }
