@@ -1,4 +1,5 @@
 use std::fmt;
+use std::io;
 
 #[cfg(doctest)]
 mod test_readme {
@@ -59,7 +60,7 @@ pub enum PathCommand<F: fmt::Display> {
 }
 
 impl<F: fmt::Display> PathCommand<F> {
-    fn write<T: fmt::Write>(&self, writer: &mut T) -> fmt::Result {
+    fn write<T: io::Write>(&self, writer: &mut T) -> io::Result<()> {
         use PathCommand::*;
         match self {
             M(x, y) => {
@@ -137,7 +138,7 @@ impl<F: fmt::Display> PathCommand<F> {
 pub struct PathBuilder<'a, T> {
     writer: &'a mut T,
 }
-impl<'a, T: fmt::Write> PathBuilder<'a, T> {
+impl<'a, T: io::Write> PathBuilder<'a, T> {
     pub fn put(&mut self, command: crate::PathCommand<impl fmt::Display>) -> &mut Self {
         command.write(&mut self.writer).unwrap();
         self
@@ -150,29 +151,32 @@ impl<'a, T: fmt::Write> PathBuilder<'a, T> {
 pub struct PointsBuilder<'a, T> {
     writer: &'a mut T,
 }
-impl<'a, T: fmt::Write> PointsBuilder<'a, T> {
+impl<'a, T: io::Write> PointsBuilder<'a, T> {
     pub fn put(&mut self, x: impl fmt::Display, y: impl fmt::Display) -> &mut Self {
         write!(self.writer, "{},{} ", x, y).unwrap();
         self
     }
 }
 
+/*
 ///
-/// Used to wrap a `std::io::Write` to have `std::fmt::Write`.
+/// Used to wrap a `std::io::Write` to have `std::io::Write`.
 /// The underlying error can be extracted through the error field.
 ///
 pub struct Adaptor<T> {
     pub inner: T,
     pub error: Result<(), std::io::Error>,
 }
+*/
 
 ///
 /// Create an initial `ElemWriter`
 ///
-pub fn new<T: fmt::Write>(a: T) -> ElemWriter<T> {
+pub fn new<T: io::Write>(a: T) -> ElemWriter<T> {
     ElemWriter(a)
 }
 
+/*
 ///
 /// Create an `ElemWriter` from a `std::io::Write`
 ///
@@ -180,7 +184,8 @@ pub fn from_io<T: std::io::Write>(a: T) -> ElemWriter<Adaptor<T>> {
     ElemWriter(upgrade_write(a))
 }
 
-///Update a `std::io::Write` to be a `std::fmt::Write`
+
+///Update a `std::io::Write` to be a `std::io::Write`
 fn upgrade_write<T: std::io::Write>(inner: T) -> Adaptor<T> {
     Adaptor {
         inner,
@@ -188,28 +193,29 @@ fn upgrade_write<T: std::io::Write>(inner: T) -> Adaptor<T> {
     }
 }
 
-impl<T: std::io::Write> std::fmt::Write for Adaptor<T> {
-    fn write_str(&mut self, s: &str) -> std::fmt::Result {
+impl<T: std::io::Write> std::io::Write for Adaptor<T> {
+    fn write_str(&mut self, s: &str) -> std::io::Result {
         match self.inner.write_all(s.as_bytes()) {
             Ok(()) => Ok(()),
             Err(e) => {
                 self.error = Err(e);
-                Err(std::fmt::Error)
+                Err(std::io:Error)
             }
         }
     }
 }
+*/
 
 ///
 /// A struct that captures a half-made element. To
 /// complete building an element, `build()` must be called.
 ///
 #[must_use]
-pub struct ElementBridge<'a, T: fmt::Write, D: fmt::Display> {
+pub struct ElementBridge<'a, T: io::Write, D: fmt::Display> {
     writer: &'a mut ElemWriter<T>,
     tag: D,
 }
-impl<'a, T: fmt::Write, D: fmt::Display> ElementBridge<'a, T, D> {
+impl<'a, T: io::Write, D: fmt::Display> ElementBridge<'a, T, D> {
     pub fn build<K>(self, func: impl FnOnce(&mut ElemWriter<T>) -> K) -> K {
         let k = func(self.writer);
         write!(self.writer.0, "</{}>", self.tag).unwrap();
@@ -220,8 +226,8 @@ impl<'a, T: fmt::Write, D: fmt::Display> ElementBridge<'a, T, D> {
 ///
 /// Create attributes.
 ///
-pub struct AttrWriter<'a, T: fmt::Write>(&'a mut T);
-impl<'a, T: fmt::Write> AttrWriter<'a, T> {
+pub struct AttrWriter<'a, T: io::Write>(&'a mut T);
+impl<'a, T: io::Write> AttrWriter<'a, T> {
     pub fn attr(&mut self, a: impl fmt::Display, b: impl fmt::Display) -> &mut Self {
         write!(self.0, " {}=\"{}\"", a, b).unwrap();
         self
@@ -252,9 +258,9 @@ impl<'a, T: fmt::Write> AttrWriter<'a, T> {
 ///
 /// Create elements with a start and end tag, or elements with a single tag.
 ///
-pub struct ElemWriter<T: fmt::Write>(T);
+pub struct ElemWriter<T: io::Write>(T);
 
-impl<T: fmt::Write> ElemWriter<T> {
+impl<T: io::Write> ElemWriter<T> {
     pub fn writer(&mut self) -> &mut T {
         &mut self.0
     }
