@@ -1,5 +1,4 @@
 use std::fmt;
-use std::io;
 
 #[cfg(doctest)]
 mod test_readme {
@@ -170,7 +169,7 @@ pub struct Adaptor<T> {
 ///
 /// Create an initial `ElemWriter`
 ///
-pub fn new<T: io::Write>(a: T) -> ElemWriter<T> {
+pub fn new<T: fmt::Write>(a: T) -> ElemWriter<T> {
     ElemWriter(a)
 }
 
