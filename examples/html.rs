@@ -1,7 +1,7 @@
 use tagger::no_attr;
 
 fn main() {
-    let mut w = tagger::from_io(std::io::stdout());
+    let mut w = tagger::new(tagger::upgrade_write(std::io::stdout()));
 
     w.put_raw("<!DOCTYPE html>");
 

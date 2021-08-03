@@ -173,15 +173,9 @@ pub fn new<T: fmt::Write>(a: T) -> ElemWriter<T> {
     ElemWriter(a)
 }
 
-///
-/// Create an `ElemWriter` from a `std::io::Write`
-///
-pub fn from_io<T: std::io::Write>(a: T) -> ElemWriter<Adaptor<T>> {
-    ElemWriter(upgrade_write(a))
-}
 
 ///Update a `std::io::Write` to be a `std::io::Write`
-fn upgrade_write<T: std::io::Write>(inner: T) -> Adaptor<T> {
+pub fn upgrade_write<T: std::io::Write>(inner: T) -> Adaptor<T> {
     Adaptor {
         inner,
         error: Ok(()),
@@ -255,6 +249,9 @@ impl<'a, T: fmt::Write> AttrWriter<'a, T> {
 pub struct ElemWriter<T>(T);
 
 impl<T: fmt::Write> ElemWriter<T> {
+    pub fn into_writer(self)->T{
+        self.0
+    }
     pub fn writer(&mut self) -> &mut T {
         &mut self.0
     }
