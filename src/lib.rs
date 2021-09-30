@@ -174,7 +174,7 @@ pub fn new<T: fmt::Write>(a: T) -> ElemWriter<T> {
 }
 
 
-///Update a `std::io::Write` to be a `std::io::Write`
+///Update a `std::io::Write` to be a `std::fmt::Write`
 pub fn upgrade_write<T: std::io::Write>(inner: T) -> Adaptor<T> {
     Adaptor {
         inner,
