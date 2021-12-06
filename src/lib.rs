@@ -138,9 +138,8 @@ pub struct PathBuilder<'a, T> {
     writer: &'a mut T,
 }
 impl<'a, T: fmt::Write> PathBuilder<'a, T> {
-    pub fn put(&mut self, command: crate::PathCommand<impl fmt::Display>) -> &mut Self {
-        command.write(&mut self.writer).unwrap();
-        self
+    pub fn put(&mut self, command: crate::PathCommand<impl fmt::Display>) -> fmt::Result {
+        command.write(&mut self.writer)
     }
 }
 
@@ -151,9 +150,8 @@ pub struct PointsBuilder<'a, T> {
     writer: &'a mut T,
 }
 impl<'a, T: fmt::Write> PointsBuilder<'a, T> {
-    pub fn put(&mut self, x: impl fmt::Display, y: impl fmt::Display) -> &mut Self {
-        write!(self.writer, "{},{} ", x, y).unwrap();
-        self
+    pub fn put(&mut self, x: impl fmt::Display, y: impl fmt::Display) -> fmt::Result {
+        write!(self.writer, "{},{} ", x, y)
     }
 }
 
@@ -172,7 +170,6 @@ pub struct Adaptor<T> {
 pub fn new<T: fmt::Write>(a: T) -> ElemWriter<T> {
     ElemWriter(a)
 }
-
 
 ///Update a `std::io::Write` to be a `std::fmt::Write`
 pub fn upgrade_write<T: std::io::Write>(inner: T) -> Adaptor<T> {
@@ -199,15 +196,16 @@ impl<T: std::io::Write> std::fmt::Write for Adaptor<T> {
 /// complete building an element, `build()` must be called.
 ///
 #[must_use]
-pub struct ElementBridge<'a, T, D> {
+pub struct ElementBridge<'a, T, D, K> {
     writer: &'a mut ElemWriter<T>,
     tag: D,
+    pub k: K,
 }
-impl<'a, T: fmt::Write, D: fmt::Display> ElementBridge<'a, T, D> {
-    pub fn build<K>(self, func: impl FnOnce(&mut ElemWriter<T>) -> K) -> K {
-        let k = func(self.writer);
-        write!(self.writer.0, "</{}>", self.tag).unwrap();
-        k
+impl<'a, T: fmt::Write, D: fmt::Display, K> ElementBridge<'a, T, D, K> {
+    pub fn build(self, func: impl FnOnce(&mut ElemWriter<T>) -> fmt::Result) -> fmt::Result {
+        let _ = func(self.writer)?;
+        write!(self.writer.0, "</{}>", self.tag)?;
+        Ok(())
     }
 }
 
@@ -216,30 +214,26 @@ impl<'a, T: fmt::Write, D: fmt::Display> ElementBridge<'a, T, D> {
 ///
 pub struct AttrWriter<'a, T>(&'a mut T);
 impl<'a, T: fmt::Write> AttrWriter<'a, T> {
-    pub fn attr(&mut self, a: impl fmt::Display, b: impl fmt::Display) -> &mut Self {
-        write!(self.0, " {}=\"{}\"", a, b).unwrap();
-        self
+    pub fn attr(&mut self, a: impl fmt::Display, b: impl fmt::Display) -> fmt::Result {
+        write!(self.0, " {}=\"{}\"", a, b)
     }
     pub fn writer(&mut self) -> &mut T {
         &mut self.0
     }
-    pub fn put_raw(&mut self, a: impl fmt::Display) -> &mut Self {
-        write!(self.0, " {}", a).unwrap();
-        self
+    pub fn put_raw(&mut self, a: impl fmt::Display) -> fmt::Result {
+        write!(self.0, " {}", a)
     }
-    pub fn path(&mut self, a: impl FnOnce(&mut PathBuilder<T>)) -> &mut Self {
+    pub fn path(&mut self, a: impl FnOnce(&mut PathBuilder<T>) -> fmt::Result) -> fmt::Result {
         let mut p = PathBuilder { writer: self.0 };
-        write!(p.writer, " d=\"").unwrap();
-        a(&mut p);
-        write!(p.writer, "\"").unwrap();
-        self
+        write!(p.writer, " d=\"")?;
+        a(&mut p)?;
+        write!(p.writer, "\"")
     }
-    pub fn points(&mut self, a: impl FnOnce(&mut PointsBuilder<T>)) -> &mut Self {
+    pub fn points(&mut self, a: impl FnOnce(&mut PointsBuilder<T>) -> fmt::Result) -> fmt::Result {
         let mut p = PointsBuilder { writer: self.0 };
-        write!(p.writer, " points=\"").unwrap();
-        a(&mut p);
-        write!(p.writer, "\"").unwrap();
-        self
+        write!(p.writer, " points=\"")?;
+        a(&mut p)?;
+        write!(p.writer, "\"")
     }
 }
 
@@ -249,39 +243,42 @@ impl<'a, T: fmt::Write> AttrWriter<'a, T> {
 pub struct ElemWriter<T>(T);
 
 impl<T: fmt::Write> ElemWriter<T> {
-    pub fn into_writer(self)->T{
+    pub fn into_writer(self) -> T {
         self.0
     }
     pub fn writer(&mut self) -> &mut T {
         &mut self.0
     }
-    pub fn put_raw(&mut self, a: impl fmt::Display) -> &mut Self {
-        write!(self.0, " {}", a).unwrap();
-        self
+
+    pub fn put_raw(&mut self, a: impl fmt::Display) -> fmt::Result {
+        write!(self.0, " {}", a)
     }
 
     pub fn single<D: fmt::Display>(
         &mut self,
         tag: D,
-        func: impl FnOnce(&mut AttrWriter<T>),
-    ) -> &mut Self {
-        write!(self.0, "<{} ", tag).unwrap();
-        func(&mut AttrWriter(&mut self.0));
-        write!(self.0, " />").unwrap();
-        self
+        func: impl FnOnce(&mut AttrWriter<T>) -> fmt::Result,
+    ) -> fmt::Result {
+        write!(self.0, "<{} ", tag)?;
+        func(&mut AttrWriter(&mut self.0))?;
+        write!(self.0, " />")
     }
-    pub fn elem<D: fmt::Display>(
+    pub fn elem<D: fmt::Display, K>(
         &mut self,
         tag: D,
-        func: impl FnOnce(&mut AttrWriter<T>),
-    ) -> ElementBridge<T, D> {
-        write!(self.0, "<{} ", tag).unwrap();
+        func: impl FnOnce(&mut AttrWriter<T>) -> Result<K, fmt::Error>,
+    ) -> Result<ElementBridge<T, D, K>, fmt::Error> {
+        write!(self.0, "<{} ", tag)?;
 
-        func(&mut AttrWriter(&mut self.0));
+        let k = func(&mut AttrWriter(&mut self.0))?;
 
-        write!(self.0, " >").unwrap();
+        write!(self.0, " >")?;
 
-        ElementBridge { writer: self, tag }
+        Ok(ElementBridge {
+            writer: self,
+            tag,
+            k,
+        })
     }
 }
 
@@ -289,6 +286,6 @@ impl<T: fmt::Write> ElemWriter<T> {
 /// Specify no attributes needed.
 /// Equivalent to writing `|_|{}`.
 ///
-pub fn no_attr<T>() -> impl FnOnce(&mut AttrWriter<T>) {
-    move |_| {}
+pub fn no_attr<T>() -> impl FnOnce(&mut AttrWriter<T>) -> fmt::Result {
+    move |_| Ok(())
 }
