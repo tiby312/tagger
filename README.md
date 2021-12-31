@@ -1,6 +1,6 @@
 ### Overview
 
-Build xml / html / svg programatically using element building blocks.
+Build xml / html / svg programmatically using element building blocks.
 Instead of using a templating engine, write data/markup that 'looks like' rust.
 
 Find it on [github](https://github.com/tiby312/tagger) and [crates.io](https://crates.io/crates/tagger).
