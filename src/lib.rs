@@ -230,16 +230,19 @@ impl<'a, T: fmt::Write> AttrWriter<'a, T> {
     ///
     /// WARNING: The user can escape xml here and inject any xml elements.
     ///
-    #[deprecated(note="please use `writer_escapable` instead")]
+    #[deprecated(note = "please use `writer_escapable or writer_safe` instead")]
     pub fn writer(&mut self) -> &mut T {
         &mut self.0
     }
 
+    pub fn writer_safe(&mut self) -> EscapeGuard<&mut T> {
+        escape_guard(&mut self.0)
+    }
 
     ///
     /// WARNING: The user can escape xml here and inject any xml elements.
     ///
-    pub fn writer_escapable(&mut self)->&mut T{
+    pub fn writer_escapable(&mut self) -> &mut T {
         &mut self.0
     }
 
@@ -280,15 +283,19 @@ impl<T: fmt::Write> ElemWriter<T> {
     ///
     /// WARNING: The user can escape xml here and inject any xml elements.
     ///
-    #[deprecated(note="please use `writer_escapable` instead")]
+    #[deprecated(note = "please use `writer_escapable or writer_safe` instead")]
     pub fn writer(&mut self) -> &mut T {
         &mut self.0
+    }
+
+    pub fn writer_safe(&mut self) -> EscapeGuard<&mut T> {
+        escape_guard(&mut self.0)
     }
 
     ///
     /// WARNING: The user can escape xml here and inject any xml elements.
     ///
-    pub fn writer_escapable(&mut self)->&mut T{
+    pub fn writer_escapable(&mut self) -> &mut T {
         &mut self.0
     }
 
