@@ -334,7 +334,7 @@ pub fn escape_guard<T: std::fmt::Write>(a: T) -> EscapeGuard<T> {
 
 /// Writer adaptor that replaces xml escaping characters with their encoded value.
 ///
-/// Disallowed characters are `"` `'` `<` `>` `&`. characters are replace with their equivalent from:
+/// Disallowed characters are `"` `'` `<` `>` `&`. characters are replaced with their equivalent from:
 /// [https://dev.w3.org/html5/html-author/charref](https://dev.w3.org/html5/html-author/charref)
 ///
 pub struct EscapeGuard<T> {
