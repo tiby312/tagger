@@ -1,4 +1,5 @@
 use std::fmt;
+use std::fmt::Write;
 
 #[cfg(doctest)]
 mod test_readme {
@@ -59,7 +60,7 @@ pub enum PathCommand<F: fmt::Display> {
 }
 
 impl<F: fmt::Display> PathCommand<F> {
-    fn write<T: fmt::Write>(&self, writer: &mut T) -> fmt::Result {
+    fn write<T: fmt::Write>(&self, mut writer: T) -> fmt::Result {
         use PathCommand::*;
         match self {
             M(x, y) => {
@@ -139,7 +140,7 @@ pub struct PathBuilder<'a, T> {
 }
 impl<'a, T: fmt::Write> PathBuilder<'a, T> {
     pub fn put(&mut self, command: crate::PathCommand<impl fmt::Display>) -> fmt::Result {
-        command.write(&mut self.writer)
+        command.write(escape_guard(&mut self.writer))
     }
 }
 
@@ -151,7 +152,7 @@ pub struct PointsBuilder<'a, T> {
 }
 impl<'a, T: fmt::Write> PointsBuilder<'a, T> {
     pub fn put(&mut self, x: impl fmt::Display, y: impl fmt::Display) -> fmt::Result {
-        write!(self.writer, "{},{} ", x, y)
+        write!(escape_guard(&mut self.writer), "{},{} ", x, y)
     }
 }
 
@@ -204,7 +205,9 @@ pub struct ElementBridge<'a, T, D, K> {
 impl<'a, T: fmt::Write, D: fmt::Display, K> ElementBridge<'a, T, D, K> {
     pub fn build<J>(self, func: impl FnOnce(&mut ElemWriter<T>) -> Result<J,fmt::Error>) -> Result<J,fmt::Error> {
         let k = func(self.writer)?;
-        write!(self.writer.0, "</{}>", self.tag)?;
+        write!(&mut self.writer.0,"{}","</")?;
+        write!(escape_guard(&mut self.writer.0), "{}", self.tag)?;
+        write!(&mut self.writer.0,"{}",">")?;
         Ok(k)
     }
 }
@@ -215,25 +218,39 @@ impl<'a, T: fmt::Write, D: fmt::Display, K> ElementBridge<'a, T, D, K> {
 pub struct AttrWriter<'a, T>(&'a mut T);
 impl<'a, T: fmt::Write> AttrWriter<'a, T> {
     pub fn attr(&mut self, a: impl fmt::Display, b: impl fmt::Display) -> fmt::Result {
-        write!(self.0, " {}=\"{}\"", a, b)
+        write!(escape_guard(&mut self.0)," {}",a)?;
+        write!(&mut self.0,"{}","=\"")?;
+        write!(escape_guard(&mut self.0),"{}",b)?;
+        write!(&mut self.0,"{}","\"")
     }
+
+    ///
+    /// WARNING: The user can escape xml here and inject any xml elements.
+    ///
     pub fn writer(&mut self) -> &mut T {
         &mut self.0
     }
     pub fn put_raw(&mut self, a: impl fmt::Display) -> fmt::Result {
-        write!(self.0, " {}", a)
+        write!(escape_guard(&mut self.0), " {}", a)
+    }
+
+    ///
+    /// WARNING: The user can escape xml here and inject any xml elements.
+    ///
+    pub fn put_raw_escapable(&mut self, a: impl fmt::Display) -> fmt::Result {
+        write!(&mut self.0, " {}", a)
     }
     pub fn path(&mut self, a: impl FnOnce(&mut PathBuilder<T>) -> fmt::Result) -> fmt::Result {
         let mut p = PathBuilder { writer: self.0 };
-        write!(p.writer, " d=\"")?;
+        write!(p.writer,"{}"," d=\"")?;
         a(&mut p)?;
-        write!(p.writer, "\"")
+        write!(p.writer,"{}","\"")
     }
     pub fn points(&mut self, a: impl FnOnce(&mut PointsBuilder<T>) -> fmt::Result) -> fmt::Result {
         let mut p = PointsBuilder { writer: self.0 };
-        write!(p.writer, " points=\"")?;
+        write!(&mut p.writer,"{}"," points=\"")?;
         a(&mut p)?;
-        write!(p.writer, "\"")
+        write!(&mut p.writer,"{}","\"")
     }
 }
 
@@ -246,33 +263,49 @@ impl<T: fmt::Write> ElemWriter<T> {
     pub fn into_writer(self) -> T {
         self.0
     }
+
+    ///
+    /// WARNING: The user can escape xml here and inject any xml elements.
+    ///
     pub fn writer(&mut self) -> &mut T {
         &mut self.0
     }
 
     pub fn put_raw(&mut self, a: impl fmt::Display) -> fmt::Result {
-        write!(self.0, " {}", a)
+        write!(escape_guard(&mut self.0), " {}", a)
     }
+
+    ///
+    /// WARNING: The user can escape xml here and inject any xml elements.
+    ///
+    pub fn put_raw_escapable(&mut self, a: impl fmt::Display) -> fmt::Result {
+        write!(&mut self.0, " {}", a)
+    }
+
 
     pub fn single<D: fmt::Display>(
         &mut self,
         tag: D,
         func: impl FnOnce(&mut AttrWriter<T>) -> fmt::Result,
     ) -> fmt::Result {
-        write!(self.0, "<{} ", tag)?;
+        write!(self.0, "{}","<")?;
+        write!(escape_guard(&mut self.0), "{}",tag)?;
+        write!(self.0, "{}"," ")?;
         func(&mut AttrWriter(&mut self.0))?;
-        write!(self.0, " />")
+        write!(self.0, "{}"," />")
     }
     pub fn elem<D: fmt::Display, K>(
         &mut self,
         tag: D,
         func: impl FnOnce(&mut AttrWriter<T>) -> Result<K, fmt::Error>,
     ) -> Result<ElementBridge<T, D, K>, fmt::Error> {
-        write!(self.0, "<{} ", tag)?;
-
+        write!(self.0, "{}","<")?;
+        write!(escape_guard(&mut self.0), "{}",tag)?;
+        write!(self.0, "{}"," ")?;
+        
         let k = func(&mut AttrWriter(&mut self.0))?;
 
-        write!(self.0, " >")?;
+        write!(self.0, "{}"," >")?;
 
         Ok(ElementBridge {
             writer: self,
@@ -288,4 +321,53 @@ impl<T: fmt::Write> ElemWriter<T> {
 ///
 pub fn no_attr<T>() -> impl FnOnce(&mut AttrWriter<T>) -> fmt::Result {
     move |_| Ok(())
+}
+
+
+
+///
+/// Writer adaptor that disallows escaping from xml.
+///
+pub fn escape_guard<T:std::fmt::Write>(a:T)->EscapeGuard<T>{
+    EscapeGuard::new(a)
+}
+
+/// Writer adaptor that replaces xml escaping characters with their encoded value. 
+///
+/// Disallowed characters are `"` `'` `<` `>` `&`. characters are replace with their equivalent from:
+/// [https://dev.w3.org/html5/html-author/charref](https://dev.w3.org/html5/html-author/charref)
+///
+pub struct EscapeGuard<T>{
+    writer:T,
+    buffer:String
+}
+
+impl<T:std::fmt::Write> EscapeGuard<T>{
+    pub fn new(writer:T)->EscapeGuard<T>{
+        EscapeGuard{
+            writer,
+            buffer:String::new()
+        }
+    }
+}
+
+impl<T:std::fmt::Write> std::fmt::Write for EscapeGuard<T>{
+    fn write_str(&mut self, s: &str) -> Result<(), std::fmt::Error>{
+        self.buffer.clear();
+        for c in s.chars(){
+            let mut tmp = [0; 4];
+
+            let c=match c{
+                '\"'=>"&quot;",
+                '\''=>"&apos;",
+                '<'=>"&lt;",
+                '>'=>"&gt;",
+                '&'=>"&amp;",
+                _=>c.encode_utf8(&mut tmp)
+            };
+
+            self.buffer.push_str(c);
+        }
+        write!(self.writer,"{}",self.buffer)
+    }
 }

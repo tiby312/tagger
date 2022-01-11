@@ -3,7 +3,7 @@ use tagger::no_attr;
 fn main() -> std::fmt::Result {
     let mut w = tagger::new(tagger::upgrade_write(std::io::stdout()));
 
-    w.put_raw("<!DOCTYPE html>")?;
+    w.put_raw_escapable("<!DOCTYPE html>")?;
 
     w.elem("style", no_attr())?.build(|w| {
         w.put_raw(
