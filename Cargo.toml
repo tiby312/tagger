@@ -2,7 +2,7 @@
 name = "tagger"
 version = "3.3.2"
 authors = ["Ken <kenakioreed@gmail.com>"]
-edition = "2021"
+edition = "2018"
 license = "MIT"
 repository = "https://github.com/tiby312/tagger"
 description = "Write SVG / HTML / XML programmatically"
