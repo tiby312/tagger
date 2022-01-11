@@ -370,6 +370,7 @@ impl<T: std::fmt::Write> std::fmt::Write for EscapeGuard<T> {
                 self.buffer.push(c);
             }
         }
-        write!(self.writer, "{}", self.buffer)
+        
+        self.writer.write_str(&self.buffer)
     }
 }
