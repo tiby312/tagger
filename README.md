@@ -4,8 +4,11 @@ Build xml / html / svg programmatically using element building blocks.
 Instead of using a templating engine, write data/markup that 'looks like' rust.
 
 Find it on [github](https://github.com/tiby312/tagger) and [crates.io](https://crates.io/crates/tagger).
+Docs at [docs.rs](https://docs.rs/tagger/latest/tagger/).
 
 Tagger also provides functionality to build svg paths and polyline attribute data.
+
+Tagger additionally protects against XML escaping by replacing xml escape characters with its encoded value. 
 
 ### Example
 

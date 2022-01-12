@@ -232,18 +232,18 @@ impl<'a, T: fmt::Write> AttrWriter<'a, T> {
     ///
     #[deprecated(note = "please use `writer_escapable or writer_safe` instead")]
     pub fn writer(&mut self) -> &mut T {
-        &mut self.0
+        self.0
     }
 
     pub fn writer_safe(&mut self) -> EscapeGuard<&mut T> {
-        escape_guard(&mut self.0)
+        escape_guard(self.0)
     }
 
     ///
     /// WARNING: The user can escape xml here and inject any xml elements.
     ///
     pub fn writer_escapable(&mut self) -> &mut T {
-        &mut self.0
+        self.0
     }
 
     pub fn put_raw(&mut self, a: impl fmt::Display) -> fmt::Result {
@@ -362,21 +362,16 @@ pub fn escape_guard<T: std::fmt::Write>(a: T) -> EscapeGuard<T> {
 ///
 pub struct EscapeGuard<T> {
     writer: T,
-    buffer: String,
 }
 
 impl<T: std::fmt::Write> EscapeGuard<T> {
     pub fn new(writer: T) -> EscapeGuard<T> {
-        EscapeGuard {
-            writer,
-            buffer: String::new(),
-        }
+        EscapeGuard { writer }
     }
 }
 
 impl<T: std::fmt::Write> std::fmt::Write for EscapeGuard<T> {
     fn write_str(&mut self, s: &str) -> Result<(), std::fmt::Error> {
-        self.buffer.clear();
         for c in s.chars() {
             let r = match c {
                 '\"' => Some("&quot;"),
@@ -388,12 +383,11 @@ impl<T: std::fmt::Write> std::fmt::Write for EscapeGuard<T> {
             };
 
             if let Some(r) = r {
-                self.buffer.push_str(r);
+                self.writer.write_str(r)?;
             } else {
-                self.buffer.push(c);
+                self.writer.write_char(c)?;
             }
         }
-
-        self.writer.write_str(&self.buffer)
+        Ok(())
     }
 }
