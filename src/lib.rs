@@ -18,7 +18,7 @@ mod test_readme {
 ///
 /// following: [w3 spec](https://www.w3.org/TR/SVG/paths.html#PathDataGeneralInformation)
 ///
-pub enum PathCommand<F: fmt::Display> {
+pub enum PathCommand<F> {
     /// move to
     M(F, F),
     /// relative move to
@@ -59,8 +59,56 @@ pub enum PathCommand<F: fmt::Display> {
     Z(F),
 }
 
-impl<F: fmt::Display> PathCommand<F> {
-    fn write<T: fmt::Write>(&self, mut writer: T) -> fmt::Result {
+impl<F> PathCommand<F> {
+    pub fn map<J>(self, mut func: impl FnMut(F) -> J) -> PathCommand<J> {
+        use PathCommand::*;
+
+        match self {
+            M(x, y) => M(func(x), func(y)),
+            M_(x, y) => M_(func(x), func(y)),
+            L(x, y) => L(func(x), func(y)),
+            L_(x, y) => L_(func(x), func(y)),
+            H(a) => H(func(a)),
+            H_(a) => H_(func(a)),
+            V(a) => V(func(a)),
+            V_(a) => V_(func(a)),
+            C(x1, y1, x2, y2, x, y) => C(func(x1), func(y1), func(x2), func(y2), func(x), func(y)),
+            C_(dx1, dy1, dx2, dy2, dx, dy) => C_(
+                func(dx1),
+                func(dy1),
+                func(dx2),
+                func(dy2),
+                func(dx),
+                func(dy),
+            ),
+            S(x2, y2, x, y) => S(func(x2), func(y2), func(x), func(y)),
+            S_(x2, y2, x, y) => S_(func(x2), func(y2), func(x), func(y)),
+            Q(x1, y1, x, y) => Q(func(x1), func(y1), func(x), func(y)),
+            Q_(dx1, dy1, dx, dy) => Q_(func(dx1), func(dy1), func(dx), func(dy)),
+            T(x, y) => T(func(x), func(y)),
+            T_(x, y) => T_(func(x), func(y)),
+            A(rx, ry, x_axis_rotation, large_arc_flag, sweep_flag, x, y) => A(
+                func(rx),
+                func(ry),
+                func(x_axis_rotation),
+                func(large_arc_flag),
+                func(sweep_flag),
+                func(x),
+                func(y),
+            ),
+            A_(rx, ry, x_axis_rotation, large_arc_flag, sweep_flag, dx, dy) => A_(
+                func(rx),
+                func(ry),
+                func(x_axis_rotation),
+                func(large_arc_flag),
+                func(sweep_flag),
+                func(dx),
+                func(dy),
+            ),
+            Z(a) => Z(func(a)),
+        }
+    }
+    fn write<T: fmt::Write>(&self, mut writer: T) -> fmt::Result where F:fmt::Display {
         use PathCommand::*;
         match self {
             M(x, y) => {
