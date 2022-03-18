@@ -60,6 +60,7 @@ pub enum PathCommand<F> {
 }
 
 impl<F> PathCommand<F> {
+    #[inline(always)]
     pub fn map<J>(self, mut func: impl FnMut(F) -> J) -> PathCommand<J> {
         use PathCommand::*;
 
@@ -108,7 +109,12 @@ impl<F> PathCommand<F> {
             Z(a) => Z(func(a)),
         }
     }
-    fn write<T: fmt::Write>(&self, mut writer: T) -> fmt::Result where F:fmt::Display {
+
+    #[inline(always)]
+    fn write<T: fmt::Write>(&self, mut writer: T) -> fmt::Result
+    where
+        F: fmt::Display,
+    {
         use PathCommand::*;
         match self {
             M(x, y) => {
