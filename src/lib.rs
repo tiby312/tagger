@@ -193,6 +193,7 @@ pub struct PathBuilder<'a, T> {
     writer: &'a mut T,
 }
 impl<'a, T: fmt::Write> PathBuilder<'a, T> {
+    #[inline(always)]
     pub fn put(&mut self, command: crate::PathCommand<impl fmt::Display>) -> fmt::Result {
         command.write(escape_guard(&mut self.writer))
     }
@@ -205,6 +206,7 @@ pub struct PointsBuilder<'a, T> {
     writer: &'a mut T,
 }
 impl<'a, T: fmt::Write> PointsBuilder<'a, T> {
+    #[inline(always)]
     pub fn put(&mut self, x: impl fmt::Display, y: impl fmt::Display) -> fmt::Result {
         write!(escape_guard(&mut self.writer), "{},{} ", x, y)
     }
