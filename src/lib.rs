@@ -331,6 +331,15 @@ impl<'a, T: fmt::Write> AttrWriter<'a, T> {
 ///
 pub struct ElemWriter<T>(T);
 
+impl<'a> ElemWriter<&'a mut dyn fmt::Write> {
+    ///
+    /// Swap out the writer before the closing elements are written out.
+    ///
+    pub fn swap_writer(&mut self, other: &'a mut dyn fmt::Write) {
+        self.0 = other;
+    }
+}
+
 impl<T: fmt::Write> ElemWriter<T> {
     pub fn into_writer(self) -> T {
         self.0
