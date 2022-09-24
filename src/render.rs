@@ -3,12 +3,11 @@ pub trait RenderTail<T: fmt::Write> {
     fn render(self, w: &mut T) -> std::fmt::Result;
 }
 
-impl<T:fmt::Write> RenderTail<T> for (){
-    fn render(self, _: &mut T) -> std::fmt::Result{
+impl<T: fmt::Write> RenderTail<T> for () {
+    fn render(self, _: &mut T) -> std::fmt::Result {
         Ok(())
     }
 }
-
 
 pub trait RenderBoth<T: fmt::Write> {
     type Tail: RenderTail<T>;
@@ -28,7 +27,6 @@ pub trait RenderBoth<T: fmt::Write> {
         Wrap { inner: self, outer }
     }
 }
-
 
 pub struct Wrap<A, B> {
     inner: A,
@@ -82,13 +80,13 @@ impl<A: RenderBoth<T>, B: RenderBoth<T>, T: fmt::Write> RenderBoth<T> for Append
     }
 }
 
-pub struct ClosureTail<F>(F);
-impl<F, T: fmt::Write> RenderTail<T> for ClosureTail<F>
+pub struct ClosureTail<D, F>(D, F);
+impl<F, D: fmt::Display, T: fmt::Write> RenderTail<T> for ClosureTail<D, F>
 where
-    F: FnOnce(&mut T) -> std::fmt::Result,
+    F: FnOnce(&mut T, D) -> std::fmt::Result,
 {
     fn render(self, w: &mut T) -> std::fmt::Result {
-        self.0(w)
+        self.1(w, self.0)
     }
 }
 
@@ -103,25 +101,28 @@ impl<A, B> Pair<A, B> {
     }
 }
 
-impl<A, B, T: fmt::Write> RenderBoth<T> for Pair<A, B>
+impl<A, B, T: fmt::Write, D: fmt::Display> RenderBoth<T> for Pair<A, B>
 where
-    A: FnOnce(&mut T) -> std::fmt::Result,
-    B: FnOnce(&mut T) -> std::fmt::Result,
+    A: FnOnce(&mut T) -> Result<D, fmt::Error>,
+    B: FnOnce(&mut T, D) -> std::fmt::Result,
 {
-    type Tail = ClosureTail<B>;
+    type Tail = ClosureTail<D, B>;
     fn render_both(self, w: &mut T) -> Result<Self::Tail, fmt::Error> {
-        (self.first)(w)?;
-        Ok(ClosureTail(self.second))
+        let d = (self.first)(w)?;
+        Ok(ClosureTail(d, self.second))
     }
 }
 
-pub fn elem<'a, T: fmt::Write>(
-    tag: &'a str,
+pub fn elem<'a, D: fmt::Display + 'a, T: fmt::Write>(
+    tag: D,
     func: impl FnOnce(&mut crate::AttrWriter<T>) -> std::fmt::Result + 'a,
 ) -> impl RenderBoth<T> + 'a {
     Pair::new(
-        move |w: &mut T| crate::write_elem(w, &tag, func),
-        move |w: &mut T| crate::write_tail(w, &tag),
+        move |w: &mut T| {
+            crate::write_elem(w, &tag, func)?;
+            Ok(tag)
+        },
+        move |w: &mut T, tag| crate::write_tail(w, &tag),
     )
 }
 
