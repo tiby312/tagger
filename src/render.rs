@@ -9,132 +9,147 @@ impl<T: fmt::Write> RenderTail<T> for () {
     }
 }
 
-pub trait RenderBoth<T: fmt::Write> {
+pub trait RenderElem<T: fmt::Write> {
     type Tail: RenderTail<T>;
-    fn render_both(self, w: &mut T) -> Result<Self::Tail, fmt::Error>;
+    fn render_head(self, w: &mut T) -> Result<Self::Tail, fmt::Error>;
 
-    fn append<R: RenderBoth<T>>(self, bottom: R) -> Append<Self, R>
+    /// Render head and tail.
+    fn render_all(self,w:&mut T)->fmt::Result where Self:Sized{
+        let next = self.render_head(w)?;
+        next.render(w)
+    }
+
+    /// Render all of Self and head of other, store tail of other.
+    fn chain<R: RenderElem<T>>(self, other: R) -> Chain<Self, R>
+    where
+        Self: Sized,
+    {
+        Chain { top: self, bottom:other }
+    }
+
+
+    /// Render head of Self, and all of other, store tail of self.
+    fn append<R: RenderElem<T>>(self, bottom: R) -> Append<Self, R>
     where
         Self: Sized,
     {
         Append { top: self, bottom }
     }
-
-    fn wrap<R: RenderBoth<T>>(self, outer: R) -> Wrap<Self, R>
-    where
-        Self: Sized,
-    {
-        Wrap { inner: self, outer }
-    }
 }
 
-pub struct Wrap<A, B> {
-    inner: A,
-    outer: B,
-}
 
-impl<A, B, T: fmt::Write> RenderBoth<T> for Wrap<A, B>
-where
-    A: RenderBoth<T>,
-    B: RenderBoth<T>,
-{
-    type Tail = TailChain<A::Tail, B::Tail>;
-    fn render_both(self, w: &mut T) -> Result<Self::Tail, fmt::Error> {
-        let tail_outer = self.outer.render_both(w)?;
-        let tail_inner = self.inner.render_both(w)?;
 
-        Ok(TailChain {
-            a: tail_inner,
-            b: tail_outer,
-        })
-    }
-}
-
-pub struct TailChain<A, B> {
-    a: A,
-    b: B,
-}
-impl<A: RenderTail<T>, B: RenderTail<T>, T: fmt::Write> RenderTail<T> for TailChain<A, B> {
-    fn render(self, w: &mut T) -> std::fmt::Result {
-        self.a.render(w)?;
-        self.b.render(w)
-    }
-}
-
-fn render_all<R: RenderBoth<T>, T: fmt::Write>(a: R, w: &mut T) -> fmt::Result {
-    let next = a.render_both(w)?;
-    next.render(w)
-}
 
 pub struct Append<A, B> {
     top: A,
     bottom: B,
 }
 
-impl<A: RenderBoth<T>, B: RenderBoth<T>, T: fmt::Write> RenderBoth<T> for Append<A, B> {
-    type Tail = B::Tail;
-    fn render_both(self, w: &mut T) -> Result<Self::Tail, fmt::Error> {
+impl<A: RenderElem<T>, B: RenderElem<T>, T: fmt::Write> RenderElem<T> for Append<A, B> {
+    type Tail = A::Tail;
+    fn render_head(self, w: &mut T) -> Result<Self::Tail, fmt::Error> {
         let Append { top, bottom } = self;
-        render_all(top, w)?;
-        bottom.render_both(w)
+        let tail=top.render_head(w)?;
+        bottom.render_all(w)?;
+        Ok(tail)
     }
 }
 
-pub struct ClosureTail<D, F>(D, F);
-impl<F, D: fmt::Display, T: fmt::Write> RenderTail<T> for ClosureTail<D, F>
+
+
+
+pub struct Chain<A, B> {
+    top: A,
+    bottom: B,
+}
+
+impl<A: RenderElem<T>, B: RenderElem<T>, T: fmt::Write> RenderElem<T> for Chain<A, B> {
+    type Tail = B::Tail;
+    fn render_head(self, w: &mut T) -> Result<Self::Tail, fmt::Error> {
+        let Chain { top, bottom } = self;
+        top.render_all(w)?;
+        bottom.render_head(w)
+    }
+}
+
+
+pub struct Single<D,F>{
+    tag:D,
+    attr:F
+}
+
+
+impl<T: fmt::Write, D: fmt::Display, F> RenderElem<T> for Single<D, F>
 where
-    F: FnOnce(&mut T, D) -> std::fmt::Result,
+    F: FnOnce(&mut crate::AttrWriter<T>) -> std::fmt::Result,
 {
-    fn render(self, w: &mut T) -> std::fmt::Result {
-        self.1(w, self.0)
+    type Tail = ();
+    fn render_head(self, w: &mut T) -> Result<Self::Tail, fmt::Error> {
+        let Single { tag, attr } = self;
+        crate::write_single(w, &tag, attr)?;
+        Ok(())
     }
 }
 
-pub struct Pair<A, B> {
-    first: A,
-    second: B,
-}
-
-impl<A, B> Pair<A, B> {
-    pub fn new(first: A, second: B) -> Self {
-        Pair { first, second }
-    }
-}
-
-impl<A, B, T: fmt::Write, D: fmt::Display> RenderBoth<T> for Pair<A, B>
+pub fn single<'a, D: fmt::Display + 'a, T: fmt::Write, F>(tag: D, attr: F) -> Single<D, F>
 where
-    A: FnOnce(&mut T) -> Result<D, fmt::Error>,
-    B: FnOnce(&mut T, D) -> std::fmt::Result,
+    F: FnOnce(&mut crate::AttrWriter<T>) -> std::fmt::Result + 'a,
 {
-    type Tail = ClosureTail<D, B>;
-    fn render_both(self, w: &mut T) -> Result<Self::Tail, fmt::Error> {
-        let d = (self.first)(w)?;
-        Ok(ClosureTail(d, self.second))
-    }
+    Single { tag: tag, attr }
 }
 
-pub fn elem<'a, D: fmt::Display + 'a, T: fmt::Write>(
+
+
+pub fn elem<'a, D: fmt::Display + 'a, T: fmt::Write, F>(tag: D, attr: F) -> Elem<D, F>
+where
+    F: FnOnce(&mut crate::AttrWriter<T>) -> std::fmt::Result + 'a,
+{
+    Elem { tag: tag, attr }
+}
+
+pub struct ElemTail<D> {
     tag: D,
-    func: impl FnOnce(&mut crate::AttrWriter<T>) -> std::fmt::Result + 'a,
-) -> impl RenderBoth<T> + 'a {
-    Pair::new(
-        move |w: &mut T| {
-            crate::write_elem(w, &tag, func)?;
-            Ok(tag)
-        },
-        move |w: &mut T, tag| crate::write_tail(w, &tag),
-    )
+}
+
+impl<D: fmt::Display, T: fmt::Write> RenderTail<T> for ElemTail<D> {
+    fn render(self, w: &mut T) -> std::fmt::Result {
+        crate::write_tail(w, &self.tag)
+    }
+}
+
+pub struct Elem<D, F> {
+    tag: D,
+    attr: F,
+}
+
+impl<T: fmt::Write, D: fmt::Display, F> RenderElem<T> for Elem<D, F>
+where
+    F: FnOnce(&mut crate::AttrWriter<T>) -> std::fmt::Result,
+{
+    type Tail = ElemTail<D>;
+    fn render_head(self, w: &mut T) -> Result<Self::Tail, fmt::Error> {
+        let Elem { tag, attr } = self;
+        crate::write_elem(w, &tag, attr)?;
+        Ok(ElemTail { tag })
+    }
 }
 
 #[test]
 fn test_svg() {
-    let potato = elem("potato", |w| w.attr("id", 5));
-    let svg = elem("svg", crate::empty_attr);
-    let html = elem("html", crate::empty_attr);
+    use crate::empty_attr;
+    let potato = elem("potato", empty_attr);
+    //let svg = elem("svg", empty_attr);
+    let chicken = elem("chicken", empty_attr);
+    let html=elem("html",empty_attr);
+    let single=single("single",empty_attr);
 
-    let k = potato.wrap(svg).append(html);
+    //let k=html.append(svg.append(potato).append(chicken));
+
+    let k=html.append(potato.chain(chicken).chain(single));
+    //let k=html.append(potato).append(chicken);
+    //let html = elem("html", crate::empty_attr);
 
     let mut w = crate::upgrade_write(std::io::stdout());
-    render_all(k, &mut w).unwrap();
+    k.render_all( &mut w).unwrap();
     println!();
 }
