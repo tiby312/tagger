@@ -1,6 +1,18 @@
 use std::fmt;
-pub trait Render<T: fmt::Write> {
+pub trait RenderTail<T: fmt::Write> {
     fn render(self, w: &mut T) -> std::fmt::Result;
+}
+
+pub trait RenderBoth<T: fmt::Write> {
+    type Tail: RenderTail<T>;
+    fn render_both(self, w: &mut T) -> Result<Self::Tail, fmt::Error>;
+
+    fn append<R: RenderBoth<T>>(self, bottom: R) -> Append<Self, R>
+    where
+        Self: Sized,
+    {
+        Append { top: self, bottom }
+    }
 
     fn wrap<R: RenderBoth<T>>(self, outer: R) -> Wrap<Self, R>
     where
@@ -10,37 +22,73 @@ pub trait Render<T: fmt::Write> {
     }
 }
 
-impl<K: std::fmt::Display, T: fmt::Write> Render<T> for K {
-    fn render(self, w: &mut T) -> std::fmt::Result {
-        write!(w, "{}", self)
-    }
-}
+// impl<K: std::fmt::Display, T: fmt::Write> Render<T> for K {
+//     fn render(self, w: &mut T) -> std::fmt::Result {
+//         write!(w, "{}", self)
+//     }
+// }
+// impl<R:RenderBoth<T>,T:fmt::Write> Render<T> for R{
+//     fn render(self,w:&mut T)->fmt::Result{
+//         let (res, next) = self.0.render_both(w);
+//         res?;
+//         next.render(w)
+//     }
+// }
 
 pub struct Wrap<A, B> {
     inner: A,
     outer: B,
 }
 
-impl<A, B, T: fmt::Write> Render<T> for Wrap<A, B>
+impl<A, B, T: fmt::Write> RenderBoth<T> for Wrap<A, B>
 where
-    A: Render<T>,
+    A: RenderBoth<T>,
     B: RenderBoth<T>,
 {
-    fn render(self, w: &mut T) -> std::fmt::Result {
-        let (res, second) = self.outer.render_both(w);
-        res?;
-        self.inner.render(w)?;
-        second.render(w)
+    type Tail = TailChain<A::Tail, B::Tail>;
+    fn render_both(self, w: &mut T) -> Result<Self::Tail, fmt::Error> {
+        let tail_outer = self.outer.render_both(w)?;
+        let tail_inner = self.inner.render_both(w)?;
+
+        Ok(TailChain {
+            a: tail_inner,
+            b: tail_outer,
+        })
     }
 }
 
-pub trait RenderBoth<T: fmt::Write> {
-    type Next: Render<T>;
-    fn render_both(self, w: &mut T) -> (std::fmt::Result, Self::Next);
+pub struct TailChain<A, B> {
+    a: A,
+    b: B,
+}
+impl<A: RenderTail<T>, B: RenderTail<T>, T: fmt::Write> RenderTail<T> for TailChain<A, B> {
+    fn render(self, w: &mut T) -> std::fmt::Result {
+        self.a.render(w)?;
+        self.b.render(w)
+    }
 }
 
-pub struct Single<F>(F);
-impl<F, T: fmt::Write> Render<T> for Single<F>
+fn render_all<R: RenderBoth<T>, T: fmt::Write>(a: R, w: &mut T) -> fmt::Result {
+    let next = a.render_both(w)?;
+    next.render(w)
+}
+
+pub struct Append<A, B> {
+    top: A,
+    bottom: B,
+}
+
+impl<A: RenderBoth<T>, B: RenderBoth<T>, T: fmt::Write> RenderBoth<T> for Append<A, B> {
+    type Tail = B::Tail;
+    fn render_both(self, w: &mut T) -> Result<Self::Tail, fmt::Error> {
+        let Append { top, bottom } = self;
+        render_all(top, w)?;
+        bottom.render_both(w)
+    }
+}
+
+pub struct ClosureTail<F>(F);
+impl<F, T: fmt::Write> RenderTail<T> for ClosureTail<F>
 where
     F: FnOnce(&mut T) -> std::fmt::Result,
 {
@@ -60,24 +108,15 @@ impl<A, B> Pair<A, B> {
     }
 }
 
-pub struct AsSingle<K>(K);
-impl<K: RenderBoth<T>, T: fmt::Write> Render<T> for AsSingle<K> {
-    fn render(self, w: &mut T) -> std::fmt::Result {
-        let (res, next) = self.0.render_both(w);
-        res?;
-        next.render(w)
-    }
-}
-
 impl<A, B, T: fmt::Write> RenderBoth<T> for Pair<A, B>
 where
     A: FnOnce(&mut T) -> std::fmt::Result,
     B: FnOnce(&mut T) -> std::fmt::Result,
 {
-    type Next = Single<B>;
-    fn render_both(self, w: &mut T) -> (std::fmt::Result, Self::Next) {
-        let res = (self.first)(w);
-        (res, Single(self.second))
+    type Tail = ClosureTail<B>;
+    fn render_both(self, w: &mut T) -> Result<Self::Tail, fmt::Error> {
+        (self.first)(w)?;
+        Ok(ClosureTail(self.second))
     }
 }
 
@@ -93,12 +132,13 @@ pub fn elem<'a, T: fmt::Write>(
 
 #[test]
 fn test_svg() {
+    let potato = elem("potato", |w| w.attr("id", 5));
     let svg = elem("svg", crate::empty_attr);
-    let k = "hello";
+    let html = elem("html", crate::empty_attr);
 
-    let k = k.wrap(svg).wrap(elem("svg", |w| w.attr("pizza", 5)));
+    let k = potato.wrap(svg).append(html);
 
     let mut w = crate::upgrade_write(std::io::stdout());
-    k.render(&mut w).unwrap();
+    render_all(k, &mut w).unwrap();
     println!();
 }
