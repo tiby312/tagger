@@ -1,3 +1,5 @@
+pub mod render;
+
 use std::fmt;
 use std::fmt::Write;
 
