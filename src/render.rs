@@ -3,6 +3,13 @@ pub trait RenderTail<T: fmt::Write> {
     fn render(self, w: &mut T) -> std::fmt::Result;
 }
 
+impl<T:fmt::Write> RenderTail<T> for (){
+    fn render(self, _: &mut T) -> std::fmt::Result{
+        Ok(())
+    }
+}
+
+
 pub trait RenderBoth<T: fmt::Write> {
     type Tail: RenderTail<T>;
     fn render_both(self, w: &mut T) -> Result<Self::Tail, fmt::Error>;
@@ -22,18 +29,6 @@ pub trait RenderBoth<T: fmt::Write> {
     }
 }
 
-// impl<K: std::fmt::Display, T: fmt::Write> Render<T> for K {
-//     fn render(self, w: &mut T) -> std::fmt::Result {
-//         write!(w, "{}", self)
-//     }
-// }
-// impl<R:RenderBoth<T>,T:fmt::Write> Render<T> for R{
-//     fn render(self,w:&mut T)->fmt::Result{
-//         let (res, next) = self.0.render_both(w);
-//         res?;
-//         next.render(w)
-//     }
-// }
 
 pub struct Wrap<A, B> {
     inner: A,
