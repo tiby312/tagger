@@ -41,12 +41,39 @@ pub trait RenderElem<T: fmt::Write> {
         Append { top: self, bottom }
     }
 
+    fn put_raw<D: fmt::Display>(self, display: D) -> Disp<Self, D>
+    where
+        Self: Sized,
+    {
+        Disp {
+            inner: self,
+            display,
+        }
+    }
+
     fn add<F>(self, func: F) -> RenderClosure<Self, F>
     where
         Self: Sized,
         F: FnOnce(&mut crate::ElemWriter<&mut T>) -> fmt::Result,
     {
         RenderClosure { inner: self, func }
+    }
+}
+
+pub struct Disp<R, D> {
+    inner: R,
+    display: D,
+}
+
+impl<R: RenderElem<T>, T: fmt::Write, D: fmt::Display> RenderElem<T> for Disp<R, D> {
+    type Tail = R::Tail;
+    fn render_head(self, w: &mut T) -> Result<Self::Tail, fmt::Error> {
+        let Disp { inner, display } = self;
+        let tail = inner.render_head(w)?;
+        use std::fmt::Write;
+        //TODO write one global function
+        write!(crate::escape_guard(w), " {}", display)?;
+        Ok(tail)
     }
 }
 
