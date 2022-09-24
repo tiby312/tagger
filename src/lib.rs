@@ -3,6 +3,8 @@ pub mod render;
 use std::fmt;
 use std::fmt::Write;
 
+use render::RenderElem;
+
 #[cfg(doctest)]
 mod test_readme {
     macro_rules! external_doc_test {
@@ -393,6 +395,10 @@ impl<T: fmt::Write> ElemWriter<T> {
             tag,
             k,
         })
+    }
+
+    pub fn elem_render<R: RenderElem<T>>(&mut self, r: R) -> fmt::Result {
+        r.render_all(&mut self.0)
     }
 }
 
