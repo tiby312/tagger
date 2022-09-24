@@ -85,6 +85,10 @@ where
     }
 }
 
+pub fn empty_attr(_: &mut crate::AttrWriter<&mut dyn std::fmt::Write>) -> std::fmt::Result {
+    Ok(())
+}
+
 pub fn elem<'a>(
     tag: &'a str,
     func: impl FnOnce(&mut crate::AttrWriter<&mut dyn std::fmt::Write>) -> std::fmt::Result + 'a,
@@ -93,7 +97,6 @@ pub fn elem<'a>(
         move |w| {
             let mut e = ElemWriter(w);
             e.single(tag, func)
-            //write!(w,"<{}>",tag)
         },
         move |w| write!(w, "</{}>", tag),
     )
@@ -101,7 +104,7 @@ pub fn elem<'a>(
 
 #[test]
 fn test_svg() {
-    let svg = elem("svg", |w| w.attr("popo", 4));
+    let svg = elem("svg", empty_attr);
     let k = "hello";
 
     let k = k.wrap(svg).wrap(elem("svg", |w| w.attr("pizza", 5)));

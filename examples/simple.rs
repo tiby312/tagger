@@ -19,7 +19,7 @@ fn main() -> std::fmt::Result {
             d.attr("style", "fill:blue")
         })?;
 
-        w.elem("style", tagger::no_attr())?
+        w.elem("style", tagger::empty_attr)?
             .build(|w| w.put_raw(".test{fill:none;stroke:white;stroke-width:3}"))?;
 
         w.elem("g", |d| d.attr("class", "test"))?.build(|w| {
