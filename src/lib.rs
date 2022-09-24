@@ -382,29 +382,45 @@ impl<T: fmt::Write> ElemWriter<T> {
         tag: D,
         func: impl FnOnce(&mut AttrWriter<T>) -> fmt::Result,
     ) -> fmt::Result {
-        self.0.write_char('<')?;
-        write!(escape_guard(&mut self.0), "{}", tag)?;
-        self.0.write_char(' ')?;
-        func(&mut AttrWriter(&mut self.0))?;
-        self.0.write_str(" />")
+        write_single(&mut self.0, &tag, func)
     }
     pub fn elem<D: fmt::Display, K>(
         &mut self,
         tag: D,
         func: impl FnOnce(&mut AttrWriter<T>) -> Result<K, fmt::Error>,
     ) -> Result<ElementBridge<T, D, K>, fmt::Error> {
-        self.0.write_char('<')?;
-        write!(escape_guard(&mut self.0), "{}", tag)?;
-        self.0.write_char(' ')?;
-        let k = func(&mut AttrWriter(&mut self.0))?;
-        self.0.write_str(" >")?;
-
+        let k = write_elem(&mut self.0, &tag, func)?;
         Ok(ElementBridge {
             writer: self,
             tag,
             k,
         })
     }
+}
+
+pub(crate) fn write_elem<W: fmt::Write, D: fmt::Display, K>(
+    writer: &mut W,
+    tag: &D,
+    func: impl FnOnce(&mut AttrWriter<W>) -> Result<K, fmt::Error>,
+) -> Result<K, fmt::Error> {
+    writer.write_char('<')?;
+    write!(escape_guard(&mut *writer), "{}", tag)?;
+    writer.write_char(' ')?;
+    let k = func(&mut AttrWriter(writer))?;
+    writer.write_str(" >")?;
+    Ok(k)
+}
+
+pub(crate) fn write_single<W: fmt::Write, D: fmt::Display>(
+    writer: &mut W,
+    tag: &D,
+    func: impl FnOnce(&mut AttrWriter<W>) -> fmt::Result,
+) -> std::fmt::Result {
+    writer.write_char('<')?;
+    write!(escape_guard(&mut *writer), "{}", tag)?;
+    writer.write_char(' ')?;
+    func(&mut AttrWriter(writer))?;
+    writer.write_str(" />")
 }
 
 pub fn empty_attr<T>(_: &mut AttrWriter<T>) -> fmt::Result {
