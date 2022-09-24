@@ -266,9 +266,7 @@ impl<'a, T: fmt::Write, D: fmt::Display, K> ElementBridge<'a, T, D, K> {
         func: impl FnOnce(&mut ElemWriter<T>) -> Result<J, fmt::Error>,
     ) -> Result<J, fmt::Error> {
         let k = func(self.writer)?;
-        self.writer.0.write_str("</")?;
-        write!(escape_guard(&mut self.writer.0), "{}", self.tag)?;
-        self.writer.0.write_char('>')?;
+        write_tail(&mut self.writer.0, &self.tag)?;
         Ok(k)
     }
 }
@@ -398,6 +396,11 @@ impl<T: fmt::Write> ElemWriter<T> {
     }
 }
 
+pub(crate) fn write_tail<W: fmt::Write, D: fmt::Display>(writer: &mut W, tag: &D) -> fmt::Result {
+    writer.write_str("</")?;
+    write!(escape_guard(&mut *writer), "{}", tag)?;
+    writer.write_char('>')
+}
 pub(crate) fn write_elem<W: fmt::Write, D: fmt::Display, K>(
     writer: &mut W,
     tag: &D,

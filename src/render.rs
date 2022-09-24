@@ -126,7 +126,7 @@ pub fn elem<'a, T: fmt::Write>(
 ) -> impl RenderBoth<T> + 'a {
     Pair::new(
         move |w: &mut T| crate::write_elem(w, &tag, func),
-        move |w: &mut T| write!(w, "</{}>", tag),
+        move |w: &mut T| crate::write_tail(w, &tag),
     )
 }
 
