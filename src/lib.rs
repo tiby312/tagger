@@ -411,7 +411,7 @@ impl<T: fmt::Write> ElemWriter<T> {
 /// Specify no attributes needed.
 /// Equivalent to writing `|_|{}`.
 ///
-pub fn no_attr<T>() -> impl FnOnce(&mut AttrWriter<T>) -> fmt::Result {
+pub fn no_attr<T>() -> impl FnOnce(&mut AttrWriter<T>) -> fmt::Result + 'static {
     move |_| Ok(())
 }
 
