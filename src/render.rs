@@ -185,13 +185,7 @@ impl<A: RenderElem, B: RenderElem> RenderElem for Append<A, B> {
     }
 }
 
-// pub fn iter_elem<I: Iterator<Item = R>, R: RenderElem>(iter: I) -> IterElem<I> {
-//     IterElem { iter }
-// }
-// pub struct IterElem<I> {
-//     iter: I,
-// }
-impl<I: Iterator<Item = R>, R: RenderElem> RenderElem for I {
+impl<I: IntoIterator<Item = R>, R: RenderElem> RenderElem for I {
     type Tail = ();
     fn render_head(self, w: &mut MyWrite) -> Result<Self::Tail, fmt::Error> {
         for i in self {
@@ -299,37 +293,19 @@ fn test_svg() {
 }
 
 #[macro_export]
-macro_rules! elem {
+macro_rules! attrs {
     ($a:expr)=>{
-        elem($a,())
+        $a
     };
     ( $a:expr,$( $x:expr ),* ) => {
         {
             use $crate::render::Attr;
-            let mut a=();
+            let mut a=$a;
             $(
                 let a=a.chain($x);
             )*
 
-            elem($a,a)
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! single {
-    ($a:expr)=>{
-        single($a,())
-    };
-    ( $a:expr,$( $x:expr ),* ) => {
-        {
-            use $crate::render::Attr;
-            let mut a=();
-            $(
-                let a=a.chain($x);
-            )*
-
-            single($a,a)
+            a
         }
     };
 }
