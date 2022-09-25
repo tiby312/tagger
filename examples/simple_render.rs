@@ -3,27 +3,13 @@ fn main() -> std::fmt::Result {
     let width = 100.0;
     let height = 100.0;
 
-    let k = render::elem("g", attr("x1", 0).chain(attr("y1", 0)));
+    let rect=elem!("g",("x1",0),("y1",0),("rx",20),("ry",20),("width",width),("height",height),("style","fill:blue"));
 
-    let rect = render::single("rect", |d| {
-        d.attr("x1", 0)?;
-        d.attr("y1", 0)?;
-        d.attr("rx", 20)?;
-        d.attr("ry", 20)?;
-        d.attr("width", width)?;
-        d.attr("height", height)?;
-        d.attr("style", "fill:blue")
-    });
+    let style=elem!("style").put_raw(".test{fill:none;stroke:white;stroke-width:3}");
 
-    let style = render::elem("style", tagger::empty_attr)
-        .put_raw(".test{fill:none;stroke:white;stroke-width:3}");
+    let svg=elem!("svg",("xmlns", "http://www.w3.org/2000/svg"),("viewBox", format_args!("0 0 {} {}", width, height)));
 
-    let svg = render::elem("svg", |d| {
-        d.attr("xmlns", "http://www.w3.org/2000/svg")?;
-        d.attr("viewBox", format_args!("0 0 {} {}", width, height))
-    });
-
-    let table = render::elem("g", |d| d.attr("class", "test")).add(|w| {
+    let table=elem!("g",("class","test")).append(dyn_elem(|w|{
         for r in (0..50).step_by(10) {
             w.elem_render(render::single("circle", |w| {
                 w.attr("cx", 50.0)?;
@@ -32,7 +18,7 @@ fn main() -> std::fmt::Result {
             }))?;
         }
         Ok(())
-    });
+    }));
 
     let all = svg.append(style).append(rect).append(table);
 
