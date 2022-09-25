@@ -25,11 +25,9 @@ fn main() -> std::fmt::Result {
         ("viewBox", format!("0 0 {} {}", width, height))
     );
 
-    let rows = iter_elem(
-        (0..50)
-            .step_by(10)
-            .map(|r| single!("circle", ("cx", 50.0), ("cy", 50.0), ("r", r))),
-    );
+    let rows = (0..50)
+        .step_by(10)
+        .map(|r| single!("circle", ("cx", 50.0), ("cy", 50.0), ("r", r)));
 
     let table = elem!("g", ("class", "test")).append(rows);
 

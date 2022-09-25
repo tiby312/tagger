@@ -185,16 +185,16 @@ impl<A: RenderElem, B: RenderElem> RenderElem for Append<A, B> {
     }
 }
 
-pub fn iter_elem<I: Iterator<Item = R>, R: RenderElem>(iter: I) -> IterElem<I> {
-    IterElem { iter }
-}
-pub struct IterElem<I> {
-    iter: I,
-}
-impl<I: Iterator<Item = R>, R: RenderElem> RenderElem for IterElem<I> {
+// pub fn iter_elem<I: Iterator<Item = R>, R: RenderElem>(iter: I) -> IterElem<I> {
+//     IterElem { iter }
+// }
+// pub struct IterElem<I> {
+//     iter: I,
+// }
+impl<I: Iterator<Item = R>, R: RenderElem> RenderElem for I {
     type Tail = ();
     fn render_head(self, w: &mut MyWrite) -> Result<Self::Tail, fmt::Error> {
-        for i in self.iter {
+        for i in self {
             i.render_all(w)?;
         }
         Ok(())
