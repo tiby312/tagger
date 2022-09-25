@@ -397,7 +397,7 @@ impl<T: fmt::Write> ElemWriter<T> {
         })
     }
 
-    pub fn elem_render<R: RenderElem<T>>(&mut self, r: R) -> fmt::Result {
+    pub fn elem_render<R: RenderElem>(&mut self, r: R) -> fmt::Result {
         r.render_all(&mut self.0)
     }
 }

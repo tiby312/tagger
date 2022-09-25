@@ -1,7 +1,9 @@
-use tagger::render::{self, RenderElem};
+use tagger::render::{self, *};
 fn main() -> std::fmt::Result {
     let width = 100.0;
     let height = 100.0;
+
+    let k = render::elem("g", attr("x1", 0).chain(attr("y1", 0)));
 
     let rect = render::single("rect", |d| {
         d.attr("x1", 0)?;
@@ -23,11 +25,11 @@ fn main() -> std::fmt::Result {
 
     let table = render::elem("g", |d| d.attr("class", "test")).add(|w| {
         for r in (0..50).step_by(10) {
-            w.single("circle", |w| {
+            w.elem_render(render::single("circle", |w| {
                 w.attr("cx", 50.0)?;
                 w.attr("cy", 50.0)?;
                 w.attr("r", r)
-            })?;
+            }))?;
         }
         Ok(())
     });
