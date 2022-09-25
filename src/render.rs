@@ -1,6 +1,4 @@
-use std::{fmt, io::Stdout};
-
-use crate::Adaptor;
+use std::fmt;
 
 pub trait Attr {
     fn render<T: fmt::Write>(self, w: &mut T) -> std::fmt::Result;
@@ -58,6 +56,27 @@ pub trait RenderTail {
 
 impl RenderTail for () {
     fn render<T: fmt::Write>(self, _: &mut T) -> std::fmt::Result {
+        Ok(())
+    }
+}
+
+pub fn dyn_elem<F>(func: F) -> DynamicElem<F>
+where
+    F: FnOnce(&mut crate::ElemWriter<&mut dyn fmt::Write>) -> fmt::Result,
+{
+    DynamicElem { func }
+}
+pub struct DynamicElem<F> {
+    func: F,
+}
+impl<F> RenderElem for DynamicElem<F>
+where
+    F: FnOnce(&mut crate::ElemWriter<&mut dyn fmt::Write>) -> fmt::Result,
+{
+    type Tail = ();
+
+    fn render_head<T: fmt::Write>(self, w: &mut T) -> Result<Self::Tail, fmt::Error> {
+        (self.func)(&mut crate::new(w))?;
         Ok(())
     }
 }
@@ -190,7 +209,7 @@ impl<A: RenderElem, B: RenderElem> RenderElem for Chain<A, B> {
 // }
 
 pub fn elem<'a, D: fmt::Display + 'a, A: Attr>(tag: D, attr: A) -> Elem<D, A> {
-    Elem { tag: tag, attr }
+    Elem { tag, attr }
 }
 
 pub struct ElemTail<D> {
@@ -226,11 +245,18 @@ impl<D: fmt::Display, A: Attr> RenderElem for Elem<D, A> {
 
 #[test]
 fn test_svg() {
+    let dynm = dyn_elem(|w| {
+        for _ in 0..10 {
+            w.elem_render(elem("potato", ()))?;
+        }
+        Ok(())
+    });
+
     let potato = elem("potato", ());
     let chicken = elem("chicken", attr("a", "a").chain(attr("b", "b")));
     let html = elem("html", attr("a", "a"));
 
-    let k = html.append(chicken.chain(potato));
+    let k = html.chain(dynm).append(chicken.chain(potato));
     //let k=html.append(potato).append(chicken);
     //let html = elem("html", crate::empty_attr);
 
