@@ -233,7 +233,7 @@ pub struct Single<D, A> {
 }
 
 impl<D: fmt::Display, A: Attr> Single<D, A> {
-    pub fn attr<AA: Attr>(self, attr: AA) -> Single<D, AA> {
+    pub fn with_attr<AA: Attr>(self, attr: AA) -> Single<D, AA> {
         Single {
             tag: self.tag,
             attr,
@@ -280,7 +280,7 @@ pub struct Elem<D, A> {
 }
 
 impl<D: fmt::Display, A: Attr> Elem<D, A> {
-    pub fn attr<AA: Attr>(self, attr: AA) -> Elem<D, AA> {
+    pub fn with_attr<AA: Attr>(self, attr: AA) -> Elem<D, AA> {
         Elem {
             tag: self.tag,
             attr,
@@ -305,18 +305,12 @@ impl<D: fmt::Display, A: Attr> RenderElem for Elem<D, A> {
 
 #[test]
 fn test_svg() {
-    let dynm = dyn_elem(|w| {
-        for _ in 0..10 {
-            w.elem_render(elem("potato", ()))?;
-        }
-        Ok(())
-    });
+    
+    let potato = elem("potato");
+    let chicken = elem("chicken").with_attr(("a", "a").chain(("b", "b")));
+    let html = elem("html").with_attr( ("a", "a"));
 
-    let potato = elem("potato", ());
-    let chicken = elem("chicken", ("a", "a").chain(("b", "b")));
-    let html = elem("html", ("a", "a"));
-
-    let k = html.chain(dynm).append(chicken.chain(potato));
+    let k = html.append(chicken.chain(potato));
     //let k=html.append(potato).append(chicken);
     //let html = elem("html", crate::empty_attr);
 
