@@ -49,18 +49,18 @@ impl<A: Attr, B: Attr> Attr for AttrChain<A, B> {
     }
 }
 
-pub fn attr<A: fmt::Display, B: fmt::Display>(first: A, second: B) -> SingleAttr<A, B> {
-    SingleAttr { first, second }
-}
+// pub fn attr<A: fmt::Display, B: fmt::Display>(first: A, second: B) -> SingleAttr<A, B> {
+//     SingleAttr { first, second }
+// }
 
-#[derive(Copy, Clone)]
-pub struct SingleAttr<A, B> {
-    first: A,
-    second: B,
-}
-impl<A: fmt::Display, B: fmt::Display> Attr for SingleAttr<A, B> {
+// #[derive(Copy, Clone)]
+// pub struct SingleAttr<A, B> {
+//     first: A,
+//     second: B,
+// }
+impl<A: fmt::Display, B: fmt::Display> Attr for (A, B) {
     fn render(self, w: &mut MyWrite) -> std::fmt::Result {
-        let SingleAttr { first, second } = self;
+        let (first, second) = self;
         use fmt::Write;
         write!(crate::escape_guard(&mut *w), " {}", first)?;
         w.write_str("=\"")?;
@@ -270,8 +270,8 @@ fn test_svg() {
     });
 
     let potato = elem("potato", ());
-    let chicken = elem("chicken", attr("a", "a").chain(attr("b", "b")));
-    let html = elem("html", attr("a", "a"));
+    let chicken = elem("chicken", ("a", "a").chain(("b", "b")));
+    let html = elem("html", ("a", "a"));
 
     let k = html.chain(dynm).append(chicken.chain(potato));
     //let k=html.append(potato).append(chicken);
@@ -287,12 +287,12 @@ macro_rules! elem {
     ($a:expr)=>{
         elem($a,())
     };
-    ( $a:expr,$( ($x:expr,$y:expr) ),* ) => {
+    ( $a:expr,$( $x:expr ),* ) => {
         {
             use $crate::render::Attr;
             let mut a=();
             $(
-                let a=a.chain(attr($x,$y));
+                let a=a.chain($x);
             )*
 
             elem($a,a)
@@ -305,12 +305,12 @@ macro_rules! single {
     ($a:expr)=>{
         single($a,())
     };
-    ( $a:expr,$( ($x:expr,$y:expr) ),* ) => {
+    ( $a:expr,$( $x:expr ),* ) => {
         {
             use $crate::render::Attr;
             let mut a=();
             $(
-                let a=a.chain(attr($x,$y));
+                let a=a.chain($x);
             )*
 
             single($a,a)

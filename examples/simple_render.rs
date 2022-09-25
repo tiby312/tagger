@@ -14,7 +14,10 @@ fn main() -> std::fmt::Result {
         ("ry", 20),
         ("width", width),
         ("height", height),
-        ("style", "fill:blue")
+        ("style", "fill:blue"),
+        path(|w|{
+            
+        })
     );
 
     let style = elem!("style").put_raw(".test{fill:none;stroke:white;stroke-width:3}");
@@ -25,13 +28,15 @@ fn main() -> std::fmt::Result {
         ("viewBox", format!("0 0 {} {}", width, height))
     );
 
-    let table = elem!("g", ("class", "test")).append(dyn_elem(|w| {
+    let rows = dyn_elem(|w| {
         for r in (0..50).step_by(10) {
             let circle = single!("circle", ("cx", 50.0), ("cy", 50.0), ("r", r));
             w.elem_render(circle)?;
         }
         Ok(())
-    }));
+    });
+
+    let table = elem!("g", ("class", "test")).append(rows);
 
     let all = svg.append(style).append(rect).append(table);
 
