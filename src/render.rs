@@ -19,6 +19,8 @@ impl Attr for () {
     }
 }
 
+
+#[derive(Copy,Clone)]
 pub struct AttrChain<A, B> {
     first: A,
     second: B,
@@ -35,6 +37,9 @@ impl<A: Attr, B: Attr> Attr for AttrChain<A, B> {
 pub fn attr<A: fmt::Display, B: fmt::Display>(first: A, second: B) -> SingleAttr<A, B> {
     SingleAttr { first, second }
 }
+
+
+#[derive(Copy,Clone)]
 pub struct SingleAttr<A, B> {
     first: A,
     second: B,
@@ -66,6 +71,9 @@ where
 {
     DynamicElem { func }
 }
+
+
+#[derive(Copy,Clone)]
 pub struct DynamicElem<F> {
     func: F,
 }
@@ -124,6 +132,7 @@ pub trait RenderElem {
     }
 }
 
+#[derive(Copy,Clone)]
 pub struct Disp<R, D> {
     inner: R,
     display: D,
@@ -157,6 +166,7 @@ impl<R: RenderElem, D: fmt::Display> RenderElem for Disp<R, D> {
 //     }
 // }
 
+#[derive(Copy,Clone)]
 pub struct Append<A, B> {
     top: A,
     bottom: B,
@@ -172,6 +182,7 @@ impl<A: RenderElem, B: RenderElem> RenderElem for Append<A, B> {
     }
 }
 
+#[derive(Copy,Clone)]
 pub struct Chain<A, B> {
     top: A,
     bottom: B,
@@ -212,6 +223,7 @@ pub fn elem<'a, D: fmt::Display + 'a, A: Attr>(tag: D, attr: A) -> Elem<D, A> {
     Elem { tag, attr }
 }
 
+#[derive(Copy,Clone)]
 pub struct ElemTail<D> {
     tag: D,
 }
@@ -222,6 +234,7 @@ impl<D: fmt::Display> RenderTail for ElemTail<D> {
     }
 }
 
+#[derive(Copy,Clone)]
 pub struct Elem<D, A> {
     tag: D,
     attr: A,
