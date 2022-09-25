@@ -343,6 +343,9 @@ impl<'a> ElemWriter<&'a mut dyn fmt::Write> {
 }
 
 impl<T: fmt::Write> ElemWriter<T> {
+    pub fn elem_render<R: RenderElem>(&mut self, r: R) -> fmt::Result {
+        r.render_all(&mut render::MyWrite(&mut self.0))
+    }
     pub fn into_writer(self) -> T {
         self.0
     }
@@ -395,10 +398,6 @@ impl<T: fmt::Write> ElemWriter<T> {
             tag,
             k,
         })
-    }
-
-    pub fn elem_render<R: RenderElem>(&mut self, r: R) -> fmt::Result {
-        r.render_all(&mut self.0)
     }
 }
 
