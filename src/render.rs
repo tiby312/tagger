@@ -140,34 +140,51 @@ pub trait RenderElem {
         Append { top: self, bottom }
     }
 
-    fn put_raw<D: fmt::Display>(self, display: D) -> Disp<Self, D>
-    where
-        Self: Sized,
-    {
-        Disp {
-            inner: self,
-            display,
-        }
-    }
+    // fn put_raw<D: fmt::Display>(self, display: D) -> Disp<Self, D>
+    // where
+    //     Self: Sized,
+    // {
+    //     Disp {
+    //         inner: self,
+    //         display,
+    //     }
+    // }
 }
 
-#[derive(Copy, Clone)]
-pub struct Disp<R, D> {
-    inner: R,
-    display: D,
+pub fn raw<D: fmt::Display>(data: D) -> Raw<D> {
+    Raw { data }
+}
+pub struct Raw<D> {
+    data: D,
 }
 
-impl<R: RenderElem, D: fmt::Display> RenderElem for Disp<R, D> {
-    type Tail = R::Tail;
+impl<D: fmt::Display> RenderElem for Raw<D> {
+    type Tail = ();
     fn render_head(self, w: &mut MyWrite) -> Result<Self::Tail, fmt::Error> {
-        let Disp { inner, display } = self;
-        let tail = inner.render_head(w)?;
         use std::fmt::Write;
         //TODO write one global function
-        write!(crate::escape_guard(w), " {}", display)?;
-        Ok(tail)
+        write!(crate::escape_guard(w), " {}", self.data)?;
+        Ok(())
     }
 }
+
+// #[derive(Copy, Clone)]
+// pub struct Disp<R, D> {
+//     inner: R,
+//     display: D,
+// }
+
+// impl<R: RenderElem, D: fmt::Display> RenderElem for Disp<R, D> {
+//     type Tail = R::Tail;
+//     fn render_head(self, w: &mut MyWrite) -> Result<Self::Tail, fmt::Error> {
+//         let Disp { inner, display } = self;
+//         let tail = inner.render_head(w)?;
+//         use std::fmt::Write;
+//         //TODO write one global function
+//         write!(crate::escape_guard(w), " {}", display)?;
+//         Ok(tail)
+//     }
+// }
 
 #[derive(Copy, Clone)]
 pub struct Append<A, B> {

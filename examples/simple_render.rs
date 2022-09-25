@@ -18,7 +18,7 @@ fn main() -> std::fmt::Result {
         ),
     );
 
-    let style = elem("style", ()).put_raw(".test{fill:none;stroke:white;stroke-width:3}");
+    let style = elem("style", ()).append(raw(".test{fill:none;stroke:white;stroke-width:3}"));
 
     let svg = elem(
         "svg",
