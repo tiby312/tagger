@@ -185,6 +185,22 @@ impl<A: RenderElem, B: RenderElem> RenderElem for Append<A, B> {
     }
 }
 
+pub fn iter_elem<I: Iterator<Item = R>, R: RenderElem>(iter: I) -> IterElem<I> {
+    IterElem { iter }
+}
+pub struct IterElem<I> {
+    iter: I,
+}
+impl<I: Iterator<Item = R>, R: RenderElem> RenderElem for IterElem<I> {
+    type Tail = ();
+    fn render_head(self, w: &mut MyWrite) -> Result<Self::Tail, fmt::Error> {
+        for i in self.iter {
+            i.render_all(w)?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Copy, Clone)]
 pub struct Chain<A, B> {
     top: A,
