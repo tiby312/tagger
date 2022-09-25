@@ -232,6 +232,14 @@ pub struct Single<D, A> {
     attr: A,
 }
 
+impl<D: fmt::Display, A: Attr> Single<D, A> {
+    pub fn attr<AA: Attr>(self, attr: AA) -> Single<D, AA> {
+        Single {
+            tag: self.tag,
+            attr,
+        }
+    }
+}
 impl<D: fmt::Display, A: Attr> RenderElem for Single<D, A> {
     type Tail = ();
     fn render_head(self, w: &mut MyWrite) -> Result<Self::Tail, fmt::Error> {
@@ -246,12 +254,12 @@ impl<D: fmt::Display, A: Attr> RenderElem for Single<D, A> {
     }
 }
 
-pub fn single<D: fmt::Display, A: Attr>(tag: D, attr: A) -> Single<D, A> {
-    Single { tag: tag, attr }
+pub fn single<D: fmt::Display>(tag: D) -> Single<D, ()> {
+    Single { tag: tag, attr: () }
 }
 
-pub fn elem<'a, D: fmt::Display + 'a, A: Attr>(tag: D, attr: A) -> Elem<D, A> {
-    Elem { tag, attr }
+pub fn elem<D: fmt::Display>(tag: D) -> Elem<D, ()> {
+    Elem { tag, attr: () }
 }
 
 #[derive(Copy, Clone)]
@@ -271,6 +279,14 @@ pub struct Elem<D, A> {
     attr: A,
 }
 
+impl<D: fmt::Display, A: Attr> Elem<D, A> {
+    pub fn attr<AA: Attr>(self, attr: AA) -> Elem<D, AA> {
+        Elem {
+            tag: self.tag,
+            attr,
+        }
+    }
+}
 impl<D: fmt::Display, A: Attr> RenderElem for Elem<D, A> {
     type Tail = ElemTail<D>;
     fn render_head(self, w: &mut MyWrite) -> Result<Self::Tail, fmt::Error> {
