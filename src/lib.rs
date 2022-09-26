@@ -17,6 +17,7 @@ mod test_readme {
     external_doc_test!(include_str!("../README.md"));
 }
 
+
 ///
 /// Construct and Write a SVG path's data.
 ///
