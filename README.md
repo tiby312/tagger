@@ -1,3 +1,7 @@
+### Before you try
+
+I recomment you use [hypermelon](https://github.com/tiby312/hypermelon) instead of this crate.
+
 ### Overview
 
 Build xml / html / svg programmatically using element building blocks.
