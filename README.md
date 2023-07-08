@@ -1,6 +1,6 @@
-#### Before you try
+### Before you try
 
-I recommend you use the [hypermelon](https://github.com/tiby312/hypermelon) crate instead of this crate.
+I recommend you use the [tagu](https://github.com/tiby312/tagu) crate instead of this crate.
 
 ### Overview
 
